@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DroidPad
+GenericName=Android Keyboard & Gamepad Bridge
+Comment=Use your Android phone as a keyboard and Xbox gamepad on Linux
+Exec=droidpad-daemon
+Icon=droidpad
+StartupNotify=false
+Terminal=false
+Categories=Utility;
+Keywords=gamepad;keyboard;android;bluetooth;controller;

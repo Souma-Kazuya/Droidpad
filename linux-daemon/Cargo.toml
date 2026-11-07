@@ -1,0 +1,3 @@
+[workspace]
+members = ["droidpad-daemon"]
+resolver = "2"

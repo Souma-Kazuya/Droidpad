@@ -1,0 +1,28 @@
+[Unit]
+Description=DroidPad — Android keyboard/gamepad bridge
+Documentation=https://github.com/droidpad/droidpad
+After=network.target bluetooth.target graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/droidpad-daemon
+Restart=on-failure
+RestartSec=5s
+
+# Allow uinput access
+SupplementaryGroups=input
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=droidpad
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.config/droidpad
+
+[Install]
+WantedBy=graphical-session.target

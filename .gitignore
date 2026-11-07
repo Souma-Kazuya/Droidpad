@@ -1,0 +1,17 @@
+# Rust
+target/
+linux-daemon/target/
+
+# Android & Gradle
+.gradle/
+build/
+**/build/
+*.apk
+*.aab
+local.properties
+
+# IDE & Editor caches
+.idea/
+*.iml
+.vscode/
+*.swp

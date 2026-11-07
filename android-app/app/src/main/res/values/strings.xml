@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DroidPad</string>
+    <string name="channel_name">DroidPad Connection</string>
+    <string name="channel_description">Maintains active input connection with Linux host</string>
+</resources>
