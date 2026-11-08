@@ -455,4 +455,301 @@ mod tests {
             panic!("Wrong payload variant");
         }
     }
+
+    // -----------------------------------------------------------------------
+    // PacketType conversion tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_packet_type_try_from_valid() {
+        assert_eq!(PacketType::try_from(0x01).unwrap(), PacketType::Keyboard);
+        assert_eq!(PacketType::try_from(0x02).unwrap(), PacketType::Gamepad);
+        assert_eq!(PacketType::try_from(0x03).unwrap(), PacketType::Ping);
+        assert_eq!(PacketType::try_from(0x04).unwrap(), PacketType::Rumble);
+        assert_eq!(PacketType::try_from(0x05).unwrap(), PacketType::Handshake);
+    }
+
+    #[test]
+    fn test_packet_type_try_from_invalid() {
+        assert!(PacketType::try_from(0x00).is_err());
+        assert!(PacketType::try_from(0x06).is_err());
+        assert!(PacketType::try_from(0xFF).is_err());
+    }
+
+    #[test]
+    fn test_packet_type_into_u8() {
+        assert_eq!(u8::from(PacketType::Keyboard), 0x01);
+        assert_eq!(u8::from(PacketType::Gamepad), 0x02);
+        assert_eq!(u8::from(PacketType::Ping), 0x03);
+        assert_eq!(u8::from(PacketType::Rumble), 0x04);
+        assert_eq!(u8::from(PacketType::Handshake), 0x05);
+    }
+
+    // -----------------------------------------------------------------------
+    // Header expected_payload_len tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_expected_payload_len() {
+        assert_eq!(Header::expected_payload_len(PacketType::Keyboard), Some(8));
+        assert_eq!(Header::expected_payload_len(PacketType::Gamepad), Some(12));
+        assert_eq!(Header::expected_payload_len(PacketType::Ping), Some(0));
+        assert_eq!(Header::expected_payload_len(PacketType::Rumble), Some(2));
+        assert_eq!(Header::expected_payload_len(PacketType::Handshake), None);
+    }
+
+    // -----------------------------------------------------------------------
+    // Rumble roundtrip
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_packet_rumble_roundtrip() {
+        let pkt = Packet::rumble(128, 64);
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let parsed = Packet::read_async(&mut cursor).await.unwrap();
+        assert_eq!(parsed.header.pkt_type, PacketType::Rumble);
+        if let Payload::Rumble(r) = parsed.payload {
+            assert_eq!(r.left, 128);
+            assert_eq!(r.right, 64);
+        } else {
+            panic!("Wrong payload variant");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Wire format validation
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_ping_wire_format() {
+        let pkt = Packet::ping();
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+        // Header: [0x44, 0x50, 0x03, 0x00] — no payload
+        assert_eq!(buf, vec![0x44, 0x50, 0x03, 0x00]);
+    }
+
+    #[tokio::test]
+    async fn test_rumble_wire_format() {
+        let pkt = Packet::rumble(0xFF, 0x00);
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+        // Header + 2-byte payload
+        assert_eq!(buf, vec![0x44, 0x50, 0x04, 0x02, 0xFF, 0x00]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Error path tests
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_bad_magic_bytes() {
+        let data = vec![0x00, 0x00, 0x03, 0x00]; // wrong magic
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Bad magic bytes"), "Unexpected error: {err}");
+    }
+
+    #[tokio::test]
+    async fn test_unknown_packet_type() {
+        let data = vec![0x44, 0x50, 0xFF, 0x00]; // unknown type 0xFF
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+        let err = format!("{:#}", result.unwrap_err());
+        assert!(err.contains("Unknown packet type"), "Unexpected error: {err}");
+    }
+
+    #[tokio::test]
+    async fn test_wrong_payload_length_for_keyboard() {
+        // Keyboard expects 8 bytes, declare 4
+        let data = vec![0x44, 0x50, 0x01, 0x04];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+        let err = format!("{:#}", result.unwrap_err());
+        assert!(err.contains("expects 8 payload bytes"), "Unexpected error: {err}");
+    }
+
+    #[tokio::test]
+    async fn test_wrong_payload_length_for_gamepad() {
+        // Gamepad expects 12 bytes, declare 6
+        let data = vec![0x44, 0x50, 0x02, 0x06];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_wrong_payload_length_for_rumble() {
+        // Rumble expects 2 bytes, declare 0
+        let data = vec![0x44, 0x50, 0x04, 0x00];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_truncated_header() {
+        // Only 2 bytes — incomplete header
+        let data = vec![0x44, 0x50];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_truncated_payload() {
+        // Valid keyboard header (expects 8 bytes) but only 4 payload bytes
+        let data = vec![0x44, 0x50, 0x01, 0x08, 0x00, 0x00, 0x04, 0x05];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_empty_stream() {
+        let data: Vec<u8> = vec![];
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_invalid_handshake_json() {
+        // Valid header for handshake, but payload is not valid JSON
+        let garbage = b"not json at all";
+        let mut data = vec![0x44, 0x50, 0x05, garbage.len() as u8];
+        data.extend_from_slice(garbage);
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+        let err = format!("{:#}", result.unwrap_err());
+        assert!(err.contains("JSON"), "Unexpected error: {err}");
+    }
+
+    #[tokio::test]
+    async fn test_handshake_non_utf8() {
+        // Valid header for handshake, but payload is invalid UTF-8
+        let bad_utf8: Vec<u8> = vec![0xFF, 0xFE, 0xFD];
+        let mut data = vec![0x44, 0x50, 0x05, bad_utf8.len() as u8];
+        data.extend_from_slice(&bad_utf8);
+        let mut cursor = Cursor::new(data);
+        let result = Packet::read_async(&mut cursor).await;
+        assert!(result.is_err());
+        let err = format!("{:#}", result.unwrap_err());
+        assert!(err.contains("UTF-8"), "Unexpected error: {err}");
+    }
+
+    // -----------------------------------------------------------------------
+    // Gamepad extreme values
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_gamepad_extreme_values() {
+        let pkt = Packet {
+            header: Header { pkt_type: PacketType::Gamepad, length: 12 },
+            payload: Payload::Gamepad(GamepadPayload {
+                buttons: 0x7FFF,            // all 15 buttons pressed
+                left_x: i16::MIN,
+                left_y: i16::MAX,
+                right_x: i16::MIN,
+                right_y: i16::MAX,
+                left_trigger: 255,
+                right_trigger: 0,
+            }),
+        };
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let parsed = Packet::read_async(&mut cursor).await.unwrap();
+        if let Payload::Gamepad(g) = parsed.payload {
+            assert_eq!(g.buttons, 0x7FFF);
+            assert_eq!(g.left_x, i16::MIN);
+            assert_eq!(g.left_y, i16::MAX);
+            assert_eq!(g.right_x, i16::MIN);
+            assert_eq!(g.right_y, i16::MAX);
+            assert_eq!(g.left_trigger, 255);
+            assert_eq!(g.right_trigger, 0);
+        } else {
+            panic!("Wrong payload variant");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Keyboard all modifiers + full keyroll
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_keyboard_all_modifiers() {
+        let pkt = Packet {
+            header: Header { pkt_type: PacketType::Keyboard, length: 8 },
+            payload: Payload::Keyboard(KeyboardPayload {
+                modifiers: 0xFF, // all 8 modifier bits set
+                keycodes: [0x04, 0x05, 0x06, 0x07, 0x08, 0x09], // A-F
+            }),
+        };
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let parsed = Packet::read_async(&mut cursor).await.unwrap();
+        if let Payload::Keyboard(k) = parsed.payload {
+            assert_eq!(k.modifiers, 0xFF);
+            assert_eq!(k.keycodes, [0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
+        } else {
+            panic!("Wrong payload variant");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Multi-packet sequential read
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_sequential_packet_read() {
+        let mut buf = Vec::new();
+        Packet::ping().write_async(&mut buf).await.unwrap();
+        Packet::rumble(10, 20).write_async(&mut buf).await.unwrap();
+        Packet::handshake("Test".into()).write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let p1 = Packet::read_async(&mut cursor).await.unwrap();
+        assert_eq!(p1.header.pkt_type, PacketType::Ping);
+
+        let p2 = Packet::read_async(&mut cursor).await.unwrap();
+        assert_eq!(p2.header.pkt_type, PacketType::Rumble);
+
+        let p3 = Packet::read_async(&mut cursor).await.unwrap();
+        assert_eq!(p3.header.pkt_type, PacketType::Handshake);
+
+        // No more data — next read should fail
+        let p4 = Packet::read_async(&mut cursor).await;
+        assert!(p4.is_err());
+    }
+
+    // -----------------------------------------------------------------------
+    // Handshake with unicode device name
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_handshake_unicode_name() {
+        let pkt = Packet::handshake("小米14 Ultra".into());
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let parsed = Packet::read_async(&mut cursor).await.unwrap();
+        if let Payload::Handshake(hs) = parsed.payload {
+            assert_eq!(hs.name, "小米14 Ultra");
+        } else {
+            panic!("Wrong payload variant");
+        }
+    }
 }
