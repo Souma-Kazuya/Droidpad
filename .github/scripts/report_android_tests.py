@@ -8,7 +8,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 def main():
-    report_dir = sys.argv[1] if len(sys.argv) > 1 else "android-app/app/build/test-results/testDebugUnitTest"
+    report_dir = sys.argv[1] if len(sys.argv) > 1 else "android-app/app/build/test-results"
 
     lines = []
     lines.append("### 🤖 Android Unit Test Results")

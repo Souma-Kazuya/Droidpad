@@ -101,12 +101,12 @@ jobs:
         working-directory: android-app
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest --continue
+          ./gradlew test
 
       - name: Publish Android Test Summary
         if: always()
         run: |
-          python3 .github/scripts/report_android_tests.py android-app/app/build/test-results/testDebugUnitTest
+          python3 .github/scripts/report_android_tests.py android-app/app/build/test-results
 
       - name: Upload Android Test Reports
         if: always()
@@ -114,8 +114,8 @@ jobs:
         with:
           name: android-test-reports
           path: |
-            android-app/app/build/reports/tests/testDebugUnitTest/
-            android-app/app/build/test-results/testDebugUnitTest/
+            android-app/app/build/reports/tests/
+            android-app/app/build/test-results/
 
       - name: Build debug APK
         working-directory: android-app
