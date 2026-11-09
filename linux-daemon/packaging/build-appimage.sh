@@ -9,7 +9,12 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DAEMON_DIR="${REPO_ROOT}/linux-daemon"
 BUILD_DIR="${DAEMON_DIR}/target/appimage-build"
 APPDIR="${BUILD_DIR}/AppDir"
-OUTPUT_DIR="${1:-${DAEMON_DIR}/target/release}"
+if [ -n "${1:-}" ]; then
+    mkdir -p "$1"
+    OUTPUT_DIR="$(cd "$1" && pwd)"
+else
+    OUTPUT_DIR="${DAEMON_DIR}/target/release"
+fi
 OUTPUT_FILE="${OUTPUT_DIR}/DroidPad-x86_64.AppImage"
 
 echo "=== Building DroidPad Release Binary ==="
@@ -118,5 +123,6 @@ if [ -f "${OUTPUT_FILE}" ]; then
     chmod +x "${OUTPUT_FILE}"
     echo "SUCCESS: AppImage generated at: ${OUTPUT_FILE}"
 else
-    echo "AppDir prepared at: ${APPDIR}"
+    echo "ERROR: AppImage was not generated at: ${OUTPUT_FILE}" >&2
+    exit 1
 fi

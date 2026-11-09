@@ -141,7 +141,7 @@ jobs:
       - name: Check magic bytes consistency
         run: |
           grep -r "0x44.*0x50\|0x50.*0x44\|\"DP\"" \
-            linux-daemon/src android-app/app/src --include="*.rs" --include="*.kt" \
+            linux-daemon/droidpad-daemon/src android-app/app/src --include="*.rs" --include="*.kt" \
             | wc -l | xargs -I{} test {} -gt 0
 
       - name: Publish Protocol Check Summary
