@@ -58,6 +58,23 @@ impl Args {
                         args.usb_port = v.parse().expect("--usb-port must be a valid u16");
                     }
                 }
+                "--help" | "-h" => {
+                    println!("DroidPad Linux Daemon v{}", env!("CARGO_PKG_VERSION"));
+                    println!("Usage: droidpad-daemon [OPTIONS]");
+                    println!();
+                    println!("Options:");
+                    println!("  --no-tray       Run in headless daemon mode (no GTK window)");
+                    println!("  --port <PORT>   Wi-Fi (TLS) listening port [default: 27183]");
+                    println!("  --bt-name <STR> Bluetooth advertised name [default: DroidPad]");
+                    println!("  --usb-port <P>  ADB forwarded USB port [default: 27184]");
+                    println!("  -h, --help      Print this help information");
+                    println!("  -v, --version   Print version information");
+                    std::process::exit(0);
+                }
+                "--version" | "-v" => {
+                    println!("droidpad-daemon {}", env!("CARGO_PKG_VERSION"));
+                    std::process::exit(0);
+                }
                 other => eprintln!("Unknown argument: {other}"),
             }
             i += 1;
@@ -82,7 +99,13 @@ fn main() -> Result<()> {
     // Build a watch channel so the daemon can broadcast connection state to the UI.
     let (state_tx, state_rx) = watch::channel(daemon::ConnectionState::Disconnected);
 
-    if args.no_tray {
+    let mut headless = args.no_tray;
+    if !headless && std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err() {
+        info!("No graphical display server detected (DISPLAY/WAYLAND_DISPLAY unset). Running in headless mode.");
+        headless = true;
+    }
+
+    if headless {
         // Headless mode: run the Tokio runtime on the current thread.
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b1d24"/>
+      <stop offset="100%" stop-color="#0e1015"/>
+    </linearGradient>
+    <linearGradient id="padGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a2e39"/>
+      <stop offset="100%" stop-color="#181a20"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#107C10"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="phoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b4252"/>
+      <stop offset="100%" stop-color="#232731"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle border highlight -->
+  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- Gamepad Body -->
+  <g filter="url(#shadow)">
+    <!-- Main controller contour -->
+    <path d="M150 170 C100 170 60 210 60 270 C60 330 90 410 130 420 C160 428 190 380 210 350 C230 340 282 340 302 350 C322 380 352 428 382 420 C422 410 452 330 452 270 C452 210 412 170 362 170 Z" fill="url(#padGrad)" stroke="#373e4d" stroke-width="3"/>
+  </g>
+
+  <!-- Left / Right Bumpers -->
+  <path d="M110 168 C120 142 160 136 200 144 L190 166 Z" fill="#323846"/>
+  <path d="M402 168 C392 142 352 136 312 144 L322 166 Z" fill="#323846"/>
+
+  <!-- Left D-Pad -->
+  <g transform="translate(132, 240)">
+    <rect x="22" y="0" width="16" height="60" rx="3" fill="#1b1d24" stroke="#434c5e" stroke-width="1.5"/>
+    <rect x="0" y="22" width="60" height="16" rx="3" fill="#1b1d24" stroke="#434c5e" stroke-width="1.5"/>
+    <circle cx="30" cy="30" r="5" fill="#2e3440"/>
+  </g>
+
+  <!-- Right ABXY Diamond -->
+  <g transform="translate(322, 235)">
+    <!-- X (West) -->
+    <circle cx="15" cy="35" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
+    <text x="15" y="39.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#38bdf8" text-anchor="middle">X</text>
+    
+    <!-- Y (North) -->
+    <circle cx="35" cy="15" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
+    <text x="35" y="19.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#facc15" text-anchor="middle">Y</text>
+    
+    <!-- B (East) -->
+    <circle cx="55" cy="35" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
+    <text x="55" y="39.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#ef4444" text-anchor="middle">B</text>
+    
+    <!-- A (South) -->
+    <circle cx="35" cy="55" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
+    <text x="35" y="59.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#22c55e" text-anchor="middle">A</text>
+  </g>
+
+  <!-- Left Thumbstick (Offset south-west) -->
+  <g transform="translate(185, 305)">
+    <circle cx="0" cy="0" r="22" fill="#16181e" stroke="#4c566a" stroke-width="2"/>
+    <circle cx="0" cy="0" r="17" fill="#242832"/>
+    <circle cx="0" cy="0" r="9" fill="#107C10" fill-opacity="0.3"/>
+  </g>
+
+  <!-- Right Thumbstick (Offset south-center) -->
+  <g transform="translate(325, 305)">
+    <circle cx="0" cy="0" r="22" fill="#16181e" stroke="#4c566a" stroke-width="2"/>
+    <circle cx="0" cy="0" r="17" fill="#242832"/>
+    <circle cx="0" cy="0" r="9" fill="#107C10" fill-opacity="0.3"/>
+  </g>
+
+  <!-- Center: Stylized Smartphone Bridge Symbol -->
+  <g transform="translate(226, 175)">
+    <!-- Phone body -->
+    <rect x="0" y="0" width="60" height="106" rx="12" fill="url(#phoneGrad)" stroke="url(#accentGrad)" stroke-width="3"/>
+    
+    <!-- Screen -->
+    <rect x="4" y="10" width="52" height="84" rx="6" fill="#101318"/>
+    
+    <!-- Signal / Wi-Fi Wave inside screen -->
+    <path d="M 20 40 A 15 15 0 0 1 40 40" fill="none" stroke="#107C10" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 24 47 A 9 9 0 0 1 36 47" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="30" cy="54" r="2.5" fill="#4ade80"/>
+    
+    <!-- DroidPad branding initials inside screen -->
+    <text x="30" y="76" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="1" text-anchor="middle">DP</text>
+
+    <!-- Home indicator bar -->
+    <rect x="22" y="99" width="16" height="2" rx="1" fill="#4c566a"/>
+  </g>
+
+  <!-- Guide / Xbox Button Glow -->
+  <circle cx="256" cy="308" r="14" fill="#107C10" filter="url(#shadow)"/>
+  <circle cx="256" cy="308" r="12" fill="#148e14"/>
+  <path d="M250 304 Q256 312 262 304 M250 312 Q256 304 262 312" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>

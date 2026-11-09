@@ -6,7 +6,13 @@ GenericName=Android Keyboard & Gamepad Bridge
 Comment=Use your Android phone as a keyboard and Xbox gamepad on Linux
 Exec=droidpad-daemon
 Icon=droidpad
-StartupNotify=false
+StartupNotify=true
+StartupWMClass=com.droidpad.LinuxDaemon
 Terminal=false
-Categories=Utility;
-Keywords=gamepad;keyboard;android;bluetooth;controller;
+Categories=Utility;Settings;HardwareSettings;
+Keywords=gamepad;keyboard;android;bluetooth;controller;remote;
+Actions=NoTray;
+
+[Desktop Action NoTray]
+Name=Start Headless (No Window)
+Exec=droidpad-daemon --no-tray

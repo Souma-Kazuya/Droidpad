@@ -27,33 +27,44 @@
 
 ---
 
+## Download & Installation
+
+Pre-built binaries are available for every release on [**GitHub Releases**](../../releases):
+
+| Platform | Download | Instructions |
+|----------|----------|--------------|
+| **📱 Android** | [**`droidpad.apk`**](../../releases/latest) | Download to phone → Tap to install |
+| **🐧 Linux** | [**`DroidPad-x86_64.AppImage`**](../../releases/latest) | `chmod +x DroidPad-x86_64.AppImage && ./DroidPad-x86_64.AppImage` |
+| **⚙️ Permissions** | [**`setup-uinput.sh`**](../../releases/latest) | `sudo ./setup-uinput.sh` (one-time `/dev/uinput` setup) |
+
+See the [**Installation Guide**](docs/INSTALL.md) for full instructions, systemd auto-start, and build-from-source steps.
+
+---
+
 ## Quick Start
 
-### Linux Host
+### 1. Launch on Linux Host
 
+Run the AppImage or daemon:
 ```bash
-# Install (Debian/Ubuntu)
-sudo dpkg -i droidpad_*.deb
-
-# Or run directly
-cargo install --path linux-daemon/droidpad-daemon
-droidpad-daemon
+chmod +x DroidPad-x86_64.AppImage
+./DroidPad-x86_64.AppImage
 ```
 
-The daemon starts and shows a system-tray icon. By default it listens on:
-- Wi-Fi: port **27183** (TCP+TLS, mDNS advertised as `_droidpad._tcp.local.`)
+The daemon opens the status window and listens concurrently on:
+- Wi-Fi: port **27183** (TCP+TLS, auto-discovered via mDNS)
 - Bluetooth: RFCOMM UUID `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
 - USB: port **27184** on `127.0.0.1` (ADB tunnel)
 
-### Android App
+### 2. Connect from Android Phone
 
-Install the APK, open **DroidPad**, tap a connection method:
+Open **DroidPad** on your phone, choose your preferred connection:
 
 | Method | Steps |
 |--------|-------|
-| **Wi-Fi** | Ensure phone and PC are on same network · tap Wi-Fi · select host from list |
-| **Bluetooth** | Pair phone with PC in Android Settings first · tap Bluetooth · select PC |
-| **USB** | Plug phone in · enable USB debugging · run `adb forward tcp:27184 tcp:27184` · tap USB |
+| **Wi-Fi** | Ensure phone and PC are on the same Wi-Fi · tap **Wi-Fi** · tap your PC name |
+| **Bluetooth** | Pair phone with PC in Android Bluetooth Settings · tap **Bluetooth** · tap your PC |
+| **USB** | Plug in USB cable · enable USB debugging · run `adb forward tcp:27184 tcp:27184` · tap **USB** |
 
 ---
 

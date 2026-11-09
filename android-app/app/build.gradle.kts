@@ -21,9 +21,30 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = System.getenv("KEYSTORE_PATH")
+                ?: project.findProperty("android.injected.signing.store.file") as String?
+            if (keystoreFile != null && file(keystoreFile).exists()) {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    ?: project.findProperty("android.injected.signing.store.password") as String? ?: ""
+                keyAlias = System.getenv("KEY_ALIAS")
+                    ?: project.findProperty("android.injected.signing.key.alias") as String? ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD")
+                    ?: project.findProperty("android.injected.signing.key.password") as String? ?: ""
+            } else {
+                // Fallback for CI/open-source release builds:
+                // Sign with debug key so generated APK can be installed on devices immediately
+                initWith(getByName("debug"))
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
