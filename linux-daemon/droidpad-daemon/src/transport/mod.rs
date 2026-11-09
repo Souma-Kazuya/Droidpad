@@ -5,6 +5,7 @@
 //! polls all active transports concurrently via `tokio::select!`.
 
 pub mod bluetooth;
+pub mod mock;
 pub mod usb;
 pub mod wifi;
 

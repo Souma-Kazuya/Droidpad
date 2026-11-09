@@ -118,57 +118,220 @@ pub async fn run(
             transport: transport_name.to_string(),
         });
 
-        // Exchange Handshake
+        // Exchange Handshake and dispatch packets until disconnect
         let host_name = std::fs::read_to_string("/etc/hostname")
             .unwrap_or_else(|_| "Linux Host".to_string())
             .trim()
             .to_string();
 
-        let hs = Packet::handshake(host_name);
-
-        if let Err(e) = conn.write_packet(&hs).await {
-            warn!("Failed to send handshake: {e}");
-            let _ = state_tx.send(ConnectionState::Disconnected);
-            continue;
-        }
-
-        // Handle packets from this connection until disconnect
-        while let Ok(pkt) = conn.read_packet().await {
-            match pkt.payload {
-                crate::protocol::packet::Payload::Keyboard(ref k) => {
-                    if let Some(ref mut kb) = keyboard {
-                        if let Err(e) = kb.apply(k) {
-                            debug_warn!("Error applying keyboard event: {e}");
-                        }
-                    }
-                }
-                crate::protocol::packet::Payload::Gamepad(ref g) => {
-                    if let Some(ref mut gp) = gamepad {
-                        if let Err(e) = gp.apply(g) {
-                            debug_warn!("Error applying gamepad event: {e}");
-                        }
-                    }
-                }
-                crate::protocol::packet::Payload::Ping => {
-                    let _ = conn.write_packet(&Packet::ping()).await;
-                }
-                crate::protocol::packet::Payload::Handshake(hs) => {
-                    info!("Received client handshake from {}: version {}", hs.name, hs.version);
-                }
-                crate::protocol::packet::Payload::Rumble(_) => {
-                    // Host does not consume rumble
-                }
-            }
+        if let Err(e) = handle_client_session(
+            &mut *conn,
+            keyboard.as_mut(),
+            gamepad.as_mut(),
+            &host_name,
+        )
+        .await
+        {
+            warn!("Session error with {peer_name}: {e}");
         }
 
         info!("Client disconnected ({peer_name})");
-        if let Some(ref mut kb) = keyboard {
-            let _ = kb.release_all();
-        }
-        if let Some(ref mut gp) = gamepad {
-            let _ = gp.reset();
-        }
         let _ = state_tx.send(ConnectionState::Disconnected);
+    }
+}
+
+/// Process an active client connection: exchange handshakes, dispatch input packets,
+/// reply to keep-alive pings, and clean up virtual device state on disconnect.
+pub async fn handle_client_session<C: Connection + ?Sized>(
+    conn: &mut C,
+    mut keyboard: Option<&mut VirtualKeyboard>,
+    mut gamepad: Option<&mut VirtualGamepad>,
+    host_name: &str,
+) -> Result<()> {
+    // 1. Send Host Handshake
+    let hs = Packet::handshake(host_name.to_string());
+    conn.write_packet(&hs).await.context("sending server handshake")?;
+
+    // 2. Dispatch loop
+    while let Ok(pkt) = conn.read_packet().await {
+        match pkt.payload {
+            crate::protocol::packet::Payload::Keyboard(ref k) => {
+                if let Some(ref mut kb) = keyboard {
+                    if let Err(e) = kb.apply(k) {
+                        debug_warn!("Error applying keyboard event: {e}");
+                    }
+                }
+            }
+            crate::protocol::packet::Payload::Gamepad(ref g) => {
+                if let Some(ref mut gp) = gamepad {
+                    if let Err(e) = gp.apply(g) {
+                        debug_warn!("Error applying gamepad event: {e}");
+                    }
+                }
+            }
+            crate::protocol::packet::Payload::Ping => {
+                let _ = conn.write_packet(&Packet::ping()).await;
+            }
+            crate::protocol::packet::Payload::Handshake(hs) => {
+                info!("Received client handshake from {}: version {}", hs.name, hs.version);
+            }
+            crate::protocol::packet::Payload::Rumble(_) => {
+                // Host does not consume rumble
+            }
+        }
+    }
+
+    // 3. Reset virtual devices on disconnect
+    if let Some(ref mut kb) = keyboard {
+        let _ = kb.release_all();
+    }
+    if let Some(ref mut gp) = gamepad {
+        let _ = gp.reset();
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::protocol::packet::{GamepadPayload, KeyboardPayload, Payload};
+    use crate::transport::mock::{ChannelMockConnection, MockConnection, MockTransport};
+
+    #[tokio::test]
+    async fn test_mock_connection_sends_server_handshake() {
+        let mut conn = MockConnection::new("192.168.1.50:45000");
+
+        let res = handle_client_session(&mut conn, None, None, "ArchLinux-Host").await;
+        assert!(res.is_ok());
+
+        // First packet sent must be server handshake
+        assert_eq!(conn.outgoing.len(), 1);
+        if let Payload::Handshake(ref hs) = conn.outgoing[0].payload {
+            assert_eq!(hs.version, "1");
+            assert_eq!(hs.name, "ArchLinux-Host");
+        } else {
+            panic!("Expected Handshake payload, got {:?}", conn.outgoing[0].payload);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_connection_replies_to_ping() {
+        let mut conn = MockConnection::with_incoming(
+            "192.168.1.50:45000",
+            vec![Packet::ping()],
+        );
+
+        let res = handle_client_session(&mut conn, None, None, "TestHost").await;
+        assert!(res.is_ok());
+
+        // Expect 2 outgoing packets: [0] = Handshake, [1] = Ping response
+        assert_eq!(conn.outgoing.len(), 2);
+        assert!(matches!(conn.outgoing[0].payload, Payload::Handshake(_)));
+        assert_eq!(conn.outgoing[1].header.pkt_type, crate::protocol::packet::PacketType::Ping);
+    }
+
+    #[tokio::test]
+    async fn test_mock_connection_stream_dispatch() {
+        let kbd_packet = Packet {
+            header: crate::protocol::packet::Header {
+                pkt_type: crate::protocol::packet::PacketType::Keyboard,
+                length: 8,
+            },
+            payload: Payload::Keyboard(KeyboardPayload {
+                modifiers: 0x02, // LShift
+                keycodes: [0x04, 0x00, 0x00, 0x00, 0x00, 0x00], // 'A'
+            }),
+        };
+
+        let pad_packet = Packet {
+            header: crate::protocol::packet::Header {
+                pkt_type: crate::protocol::packet::PacketType::Gamepad,
+                length: 12,
+            },
+            payload: Payload::Gamepad(GamepadPayload {
+                buttons: 0x0001, // BTN_A
+                left_x: 10000,
+                left_y: -10000,
+                right_x: 0,
+                right_y: 0,
+                left_trigger: 128,
+                right_trigger: 0,
+            }),
+        };
+
+        let client_hs = Packet::handshake("Google Pixel 7".into());
+        let rumble = Packet::rumble(50, 50);
+
+        let mut conn = MockConnection::with_incoming(
+            "Bluetooth (AA:BB:CC:DD:EE:FF)",
+            vec![client_hs, kbd_packet, Packet::ping(), pad_packet, rumble],
+        );
+
+        let res = handle_client_session(&mut conn, None, None, "DesktopHost").await;
+        assert!(res.is_ok());
+
+        // Outgoing: Handshake + Ping response
+        assert_eq!(conn.outgoing.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_mock_transport_queue_and_accept() {
+        let mut transport = MockTransport::new("Virtual Wi-Fi");
+        assert_eq!(transport.name(), "Virtual Wi-Fi");
+
+        let conn = MockConnection::new("127.0.0.1:9999");
+        transport.push_connection(conn).await;
+
+        let accepted = transport.accept().await.expect("Failed to accept mock connection");
+        assert_eq!(accepted.peer_name(), "127.0.0.1:9999");
+    }
+
+    #[tokio::test]
+    async fn test_channel_mock_interactive_session() {
+        let (mut conn, mut handle) = ChannelMockConnection::pair("USB/ADB (127.0.0.1:27184)");
+
+        // Spawn session handler in background
+        let session_task = tokio::spawn(async move {
+            handle_client_session(&mut conn, None, None, "InteractiveHost").await
+        });
+
+        // 1. Receive server handshake
+        let server_hs = handle.outgoing_rx.recv().await.expect("Did not receive server handshake");
+        if let Payload::Handshake(ref hs) = server_hs.payload {
+            assert_eq!(hs.name, "InteractiveHost");
+        } else {
+            panic!("Expected handshake");
+        }
+
+        // 2. Send Ping and receive Pong
+        handle.incoming_tx.send(Packet::ping()).await.unwrap();
+        let pong = handle.outgoing_rx.recv().await.expect("Did not receive ping reply");
+        assert_eq!(pong.header.pkt_type, crate::protocol::packet::PacketType::Ping);
+
+        // 3. Close incoming channel to simulate disconnect
+        drop(handle.incoming_tx);
+
+        let result = session_task.await.unwrap();
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_multi_transport_selection() {
+        let mut wifi = MockTransport::new("Wi-Fi");
+        let mut usb = MockTransport::new("USB");
+
+        // Queue connection on USB transport only
+        usb.push_connection(MockConnection::new("USB-Client-1")).await;
+
+        // Select should pick USB immediately without hanging on empty Wi-Fi
+        let (conn, selected_name) = tokio::select! {
+            res = accept_opt(Some(&mut wifi)) => (res.unwrap(), "Wi-Fi"),
+            res = accept_opt(Some(&mut usb)) => (res.unwrap(), "USB"),
+        };
+
+        assert_eq!(selected_name, "USB");
+        assert_eq!(conn.peer_name(), "USB-Client-1");
     }
 }
 

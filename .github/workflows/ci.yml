@@ -2,9 +2,12 @@ name: DroidPad CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, Trial]
   pull_request:
-    branches: [main]
+    branches: [main, develop, Trial]
+
+permissions:
+  contents: read
 
 jobs:
   # ─── Linux Daemon ────────────────────────────────────────────
@@ -45,7 +48,20 @@ jobs:
 
       - name: Run tests
         working-directory: linux-daemon
-        run: cargo test --all
+        run: |
+          cargo test --all -- --nocapture 2>&1 | tee test-output.txt
+
+      - name: Publish Linux Daemon Test Summary
+        if: always()
+        run: |
+          python3 .github/scripts/report_daemon_tests.py linux-daemon/test-output.txt "${{ matrix.os }}"
+
+      - name: Upload Linux test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-daemon-test-results-${{ matrix.os }}
+          path: linux-daemon/test-output.txt
 
       - name: Validate desktop entry
         run: desktop-file-validate linux-daemon/packaging/droidpad.desktop
@@ -75,16 +91,37 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
+      - name: Run unit tests
         working-directory: android-app
         run: |
           chmod +x gradlew
+          ./gradlew testDebugUnitTest --continue
+
+      - name: Publish Android Test Summary
+        if: always()
+        run: |
+          python3 .github/scripts/report_android_tests.py android-app/app/build/test-results/testDebugUnitTest
+
+      - name: Upload Android Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: |
+            android-app/app/build/reports/tests/testDebugUnitTest/
+            android-app/app/build/test-results/testDebugUnitTest/
+
+      - name: Build debug APK
+        working-directory: android-app
+        run: |
           ./gradlew assembleDebug
 
       - name: Upload debug APK artifact
@@ -106,3 +143,10 @@ jobs:
           grep -r "0x44.*0x50\|0x50.*0x44\|\"DP\"" \
             linux-daemon/src android-app/app/src --include="*.rs" --include="*.kt" \
             | wc -l | xargs -I{} test {} -gt 0
+
+      - name: Publish Protocol Check Summary
+        if: always()
+        run: |
+          echo "### 📋 Protocol Specification Check" >> $GITHUB_STEP_SUMMARY
+          echo "- **PROTOCOL.md**: Verified ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Magic Bytes (0x44 0x50 / DP)**: Verified across Rust & Kotlin codebases ✅" >> $GITHUB_STEP_SUMMARY

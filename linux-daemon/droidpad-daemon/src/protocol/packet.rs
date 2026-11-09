@@ -58,7 +58,7 @@ impl From<PacketType> for u8 {
 // ---------------------------------------------------------------------------
 
 /// Four-byte packet header.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Header {
     /// Packet type discriminant.
     pub pkt_type: PacketType,
@@ -88,7 +88,7 @@ impl Header {
 /// `modifiers` bit layout:
 /// - bit 0: LCtrl  bit 1: LShift  bit 2: LAlt   bit 3: LMeta
 /// - bit 4: RCtrl  bit 5: RShift  bit 6: RAlt   bit 7: RMeta
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyboardPayload {
     pub modifiers: u8,
     /// Up to 6 simultaneous HID Usage IDs (0x00 = empty slot).
@@ -102,7 +102,7 @@ pub struct KeyboardPayload {
 /// - bit 4: LB      bit 5: RB      bit 6: Start   bit 7: Select
 /// - bit 8: L3      bit 9: R3      bit 10: D-Up   bit 11: D-Down
 /// - bit 12: D-Left  bit 13: D-Right  bit 14: Guide
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GamepadPayload {
     /// Button bitfield (see above).
     pub buttons: u16,
@@ -117,7 +117,7 @@ pub struct GamepadPayload {
 }
 
 /// Rumble feedback (2 bytes).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RumblePayload {
     /// Left (low-frequency) motor, 0–255.
     pub left: u8,
@@ -126,7 +126,7 @@ pub struct RumblePayload {
 }
 
 /// Initial handshake JSON payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HandshakePayload {
     pub version: String,
     pub name: String,
@@ -137,7 +137,7 @@ pub struct HandshakePayload {
 // ---------------------------------------------------------------------------
 
 /// Discriminated union of all payload types.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Payload {
     Keyboard(KeyboardPayload),
     Gamepad(GamepadPayload),
@@ -147,7 +147,7 @@ pub enum Payload {
 }
 
 /// A complete DroidPad wire packet.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Packet {
     pub header: Header,
     pub payload: Payload,
