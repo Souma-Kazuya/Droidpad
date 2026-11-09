@@ -135,9 +135,10 @@ if [ ! -f "$CLASSPATH" ]; then
 fi
 
 # Collect all arguments for the java command.
-set -- "$@" \
+set -- \
     "-Dorg.gradle.appname=$APP_BASE_NAME" \
     -classpath "$CLASSPATH" \
-    org.gradle.wrapper.GradleWrapperMain
+    org.gradle.wrapper.GradleWrapperMain \
+    "$@"
 
 exec "$JAVACMD" "$@"

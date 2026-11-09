@@ -37,6 +37,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: linux-daemon
+          key: ${{ matrix.os }}
 
       - name: Check formatting
         working-directory: linux-daemon
