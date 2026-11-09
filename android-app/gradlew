@@ -116,17 +116,28 @@ if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
     esac
 fi
 
-# Collect all arguments for the java command.
-set -- "$@" \
-    "-Dorg.gradle.appname=$APP_BASE_NAME" \
-    -classpath "$CLASSPATH" \
-    org.gradle.wrapper.GradleWrapperMain
+# Ensure wrapper jar exists, attempting download if absent
+if [ ! -f "$CLASSPATH" ]; then
+    WRAPPER_URL="https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.jar"
+    mkdir -p "$(dirname "$CLASSPATH")"
+    if command -v curl >/dev/null 2>&1; then
+        curl -sL "$WRAPPER_URL" -o "$CLASSPATH" 2>/dev/null
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$WRAPPER_URL" -O "$CLASSPATH" 2>/dev/null
+    fi
+fi
 
-# If wrapper jar doesn't exist yet (e.g. initial clone), attempt using system gradle or fallback
+# If wrapper jar still doesn't exist, attempt using system gradle fallback with original args
 if [ ! -f "$CLASSPATH" ]; then
     if command -v gradle >/dev/null 2>&1; then
         exec gradle "$@"
     fi
 fi
+
+# Collect all arguments for the java command.
+set -- "$@" \
+    "-Dorg.gradle.appname=$APP_BASE_NAME" \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain
 
 exec "$JAVACMD" "$@"
