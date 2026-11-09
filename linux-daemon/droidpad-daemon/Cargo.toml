@@ -1,6 +1,6 @@
 [package]
 name = "droidpad-daemon"
-version = "0.1.0"
+version = "1.0.2"
 edition = "2021"
 description = "Linux daemon for DroidPad — use an Android device as keyboard/gamepad over Wi-Fi, Bluetooth, or USB"
 license = "Apache-2.0"
