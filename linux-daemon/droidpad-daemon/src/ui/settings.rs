@@ -1,8 +1,8 @@
 //! GTK4 / Libadwaita Preferences & Configuration window.
 
+use gtk4::{Align, Label, Switch};
 use libadwaita::prelude::*;
 use libadwaita::{ActionRow, Application, PreferencesGroup, PreferencesPage, PreferencesWindow};
-use gtk4::{Align, Label, Switch};
 
 /// Create and present the DroidPad Settings & Status window.
 pub fn show_settings_window(app: &Application) {
@@ -57,7 +57,11 @@ pub fn show_settings_window(app: &Application) {
         .title("Virtual Keyboard")
         .subtitle("Linux evdev keyboard layout with 6KRO")
         .build();
-    let kb_status = Label::builder().label("Active").css_classes(["success"]).valign(Align::Center).build();
+    let kb_status = Label::builder()
+        .label("Active")
+        .css_classes(["success"])
+        .valign(Align::Center)
+        .build();
     kb_row.add_suffix(&kb_status);
     emu_group.add(&kb_row);
 
@@ -65,7 +69,11 @@ pub fn show_settings_window(app: &Application) {
         .title("Xbox 360 Gamepad")
         .subtitle("Vendor 0x045E • Product 0x028E (xpad driver compatible)")
         .build();
-    let gp_status = Label::builder().label("Active").css_classes(["success"]).valign(Align::Center).build();
+    let gp_status = Label::builder()
+        .label("Active")
+        .css_classes(["success"])
+        .valign(Align::Center)
+        .build();
     gp_row.add_suffix(&gp_status);
     emu_group.add(&gp_row);
 

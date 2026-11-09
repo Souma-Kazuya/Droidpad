@@ -10,21 +10,18 @@ use tokio::sync::watch;
 use tracing::{info, warn};
 
 use crate::protocol::packet::Packet;
-use crate::transport::wifi::{build_self_signed_tls_config, WifiTransport};
-use crate::transport::usb::UsbTransport;
 use crate::transport::bluetooth::BluetoothTransport;
+use crate::transport::usb::UsbTransport;
+use crate::transport::wifi::{build_self_signed_tls_config, WifiTransport};
 use crate::transport::{Connection, Transport};
-use crate::uinput::keyboard::VirtualKeyboard;
 use crate::uinput::gamepad::VirtualGamepad;
+use crate::uinput::keyboard::VirtualKeyboard;
 
 /// Connection state observed by UI components.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConnectionState {
     Disconnected,
-    Connected {
-        peer: String,
-        transport: String,
-    },
+    Connected { peer: String, transport: String },
 }
 
 /// Run the primary DroidPad daemon loop.
@@ -58,8 +55,8 @@ pub async fn run(
     };
 
     info!("Initializing transports...");
-    let tls_config = build_self_signed_tls_config()
-        .context("generating TLS credentials for Wi-Fi transport")?;
+    let tls_config =
+        build_self_signed_tls_config().context("generating TLS credentials for Wi-Fi transport")?;
 
     let mut wifi_transport = match WifiTransport::new(wifi_port, tls_config).await {
         Ok(w) => Some(w),
@@ -124,13 +121,8 @@ pub async fn run(
             .trim()
             .to_string();
 
-        if let Err(e) = handle_client_session(
-            &mut *conn,
-            keyboard.as_mut(),
-            gamepad.as_mut(),
-            &host_name,
-        )
-        .await
+        if let Err(e) =
+            handle_client_session(&mut *conn, keyboard.as_mut(), gamepad.as_mut(), &host_name).await
         {
             warn!("Session error with {peer_name}: {e}");
         }
@@ -150,7 +142,9 @@ pub async fn handle_client_session<C: Connection + ?Sized>(
 ) -> Result<()> {
     // 1. Send Host Handshake
     let hs = Packet::handshake(host_name.to_string());
-    conn.write_packet(&hs).await.context("sending server handshake")?;
+    conn.write_packet(&hs)
+        .await
+        .context("sending server handshake")?;
 
     // 2. Dispatch loop
     while let Ok(pkt) = conn.read_packet().await {
@@ -173,7 +167,10 @@ pub async fn handle_client_session<C: Connection + ?Sized>(
                 let _ = conn.write_packet(&Packet::ping()).await;
             }
             crate::protocol::packet::Payload::Handshake(hs) => {
-                info!("Received client handshake from {}: version {}", hs.name, hs.version);
+                info!(
+                    "Received client handshake from {}: version {}",
+                    hs.name, hs.version
+                );
             }
             crate::protocol::packet::Payload::Rumble(_) => {
                 // Host does not consume rumble
@@ -191,6 +188,24 @@ pub async fn handle_client_session<C: Connection + ?Sized>(
 
     Ok(())
 }
+
+async fn accept_opt<T: Transport + ?Sized>(t: Option<&mut T>) -> Result<Box<dyn Connection>> {
+    match t {
+        Some(transport) => transport.accept().await,
+        None => {
+            // Keep pending forever if transport is unconfigured/unavailable
+            future::pending::<()>().await;
+            anyhow::bail!("Transport uninitialized")
+        }
+    }
+}
+
+macro_rules! debug_warn {
+    ($($arg:tt)*) => {
+        tracing::debug!($($arg)*)
+    };
+}
+pub(crate) use debug_warn;
 
 #[cfg(test)]
 mod tests {
@@ -211,16 +226,16 @@ mod tests {
             assert_eq!(hs.version, "1");
             assert_eq!(hs.name, "ArchLinux-Host");
         } else {
-            panic!("Expected Handshake payload, got {:?}", conn.outgoing[0].payload);
+            panic!(
+                "Expected Handshake payload, got {:?}",
+                conn.outgoing[0].payload
+            );
         }
     }
 
     #[tokio::test]
     async fn test_mock_connection_replies_to_ping() {
-        let mut conn = MockConnection::with_incoming(
-            "192.168.1.50:45000",
-            vec![Packet::ping()],
-        );
+        let mut conn = MockConnection::with_incoming("192.168.1.50:45000", vec![Packet::ping()]);
 
         let res = handle_client_session(&mut conn, None, None, "TestHost").await;
         assert!(res.is_ok());
@@ -228,7 +243,10 @@ mod tests {
         // Expect 2 outgoing packets: [0] = Handshake, [1] = Ping response
         assert_eq!(conn.outgoing.len(), 2);
         assert!(matches!(conn.outgoing[0].payload, Payload::Handshake(_)));
-        assert_eq!(conn.outgoing[1].header.pkt_type, crate::protocol::packet::PacketType::Ping);
+        assert_eq!(
+            conn.outgoing[1].header.pkt_type,
+            crate::protocol::packet::PacketType::Ping
+        );
     }
 
     #[tokio::test]
@@ -239,7 +257,7 @@ mod tests {
                 length: 8,
             },
             payload: Payload::Keyboard(KeyboardPayload {
-                modifiers: 0x02, // LShift
+                modifiers: 0x02,                                // LShift
                 keycodes: [0x04, 0x00, 0x00, 0x00, 0x00, 0x00], // 'A'
             }),
         };
@@ -283,7 +301,10 @@ mod tests {
         let conn = MockConnection::new("127.0.0.1:9999");
         transport.push_connection(conn).await;
 
-        let accepted = transport.accept().await.expect("Failed to accept mock connection");
+        let accepted = transport
+            .accept()
+            .await
+            .expect("Failed to accept mock connection");
         assert_eq!(accepted.peer_name(), "127.0.0.1:9999");
     }
 
@@ -297,7 +318,11 @@ mod tests {
         });
 
         // 1. Receive server handshake
-        let server_hs = handle.outgoing_rx.recv().await.expect("Did not receive server handshake");
+        let server_hs = handle
+            .outgoing_rx
+            .recv()
+            .await
+            .expect("Did not receive server handshake");
         if let Payload::Handshake(ref hs) = server_hs.payload {
             assert_eq!(hs.name, "InteractiveHost");
         } else {
@@ -306,8 +331,15 @@ mod tests {
 
         // 2. Send Ping and receive Pong
         handle.incoming_tx.send(Packet::ping()).await.unwrap();
-        let pong = handle.outgoing_rx.recv().await.expect("Did not receive ping reply");
-        assert_eq!(pong.header.pkt_type, crate::protocol::packet::PacketType::Ping);
+        let pong = handle
+            .outgoing_rx
+            .recv()
+            .await
+            .expect("Did not receive ping reply");
+        assert_eq!(
+            pong.header.pkt_type,
+            crate::protocol::packet::PacketType::Ping
+        );
 
         // 3. Close incoming channel to simulate disconnect
         drop(handle.incoming_tx);
@@ -322,7 +354,8 @@ mod tests {
         let mut usb = MockTransport::new("USB");
 
         // Queue connection on USB transport only
-        usb.push_connection(MockConnection::new("USB-Client-1")).await;
+        usb.push_connection(MockConnection::new("USB-Client-1"))
+            .await;
 
         // Select should pick USB immediately without hanging on empty Wi-Fi
         let (conn, selected_name) = tokio::select! {
@@ -334,21 +367,3 @@ mod tests {
         assert_eq!(conn.peer_name(), "USB-Client-1");
     }
 }
-
-async fn accept_opt<T: Transport + ?Sized>(t: Option<&mut T>) -> Result<Box<dyn Connection>> {
-    match t {
-        Some(transport) => transport.accept().await,
-        None => {
-            // Keep pending forever if transport is unconfigured/unavailable
-            future::pending::<()>().await;
-            anyhow::bail!("Transport uninitialized")
-        }
-    }
-}
-
-macro_rules! debug_warn {
-    ($($arg:tt)*) => {
-        tracing::debug!($($arg)*)
-    };
-}
-pub(crate) use debug_warn;

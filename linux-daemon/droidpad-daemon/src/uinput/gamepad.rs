@@ -15,35 +15,35 @@ use crate::protocol::packet::GamepadPayload;
 // Button bit positions in GamepadPayload::buttons (u16)
 // ---------------------------------------------------------------------------
 
-const BTN_BIT_A:      u16 = 1 << 0;
-const BTN_BIT_B:      u16 = 1 << 1;
-const BTN_BIT_X:      u16 = 1 << 2;
-const BTN_BIT_Y:      u16 = 1 << 3;
-const BTN_BIT_LB:     u16 = 1 << 4;
-const BTN_BIT_RB:     u16 = 1 << 5;
-const BTN_BIT_START:  u16 = 1 << 6;
+const BTN_BIT_A: u16 = 1 << 0;
+const BTN_BIT_B: u16 = 1 << 1;
+const BTN_BIT_X: u16 = 1 << 2;
+const BTN_BIT_Y: u16 = 1 << 3;
+const BTN_BIT_LB: u16 = 1 << 4;
+const BTN_BIT_RB: u16 = 1 << 5;
+const BTN_BIT_START: u16 = 1 << 6;
 const BTN_BIT_SELECT: u16 = 1 << 7;
-const BTN_BIT_L3:     u16 = 1 << 8;
-const BTN_BIT_R3:     u16 = 1 << 9;
+const BTN_BIT_L3: u16 = 1 << 8;
+const BTN_BIT_R3: u16 = 1 << 9;
 const BTN_BIT_DPAD_U: u16 = 1 << 10;
 const BTN_BIT_DPAD_D: u16 = 1 << 11;
 const BTN_BIT_DPAD_L: u16 = 1 << 12;
 const BTN_BIT_DPAD_R: u16 = 1 << 13;
-const BTN_BIT_GUIDE:  u16 = 1 << 14;
+const BTN_BIT_GUIDE: u16 = 1 << 14;
 
 /// Mapping: (bit mask, evdev Key).
 const BUTTON_MAP: &[(u16, Key)] = &[
-    (BTN_BIT_A,      Key::BTN_SOUTH),   // A
-    (BTN_BIT_B,      Key::BTN_EAST),    // B
-    (BTN_BIT_X,      Key::BTN_WEST),    // X
-    (BTN_BIT_Y,      Key::BTN_NORTH),   // Y
-    (BTN_BIT_LB,     Key::BTN_TL),      // Left Bumper
-    (BTN_BIT_RB,     Key::BTN_TR),      // Right Bumper
-    (BTN_BIT_START,  Key::BTN_START),
+    (BTN_BIT_A, Key::BTN_SOUTH), // A
+    (BTN_BIT_B, Key::BTN_EAST),  // B
+    (BTN_BIT_X, Key::BTN_WEST),  // X
+    (BTN_BIT_Y, Key::BTN_NORTH), // Y
+    (BTN_BIT_LB, Key::BTN_TL),   // Left Bumper
+    (BTN_BIT_RB, Key::BTN_TR),   // Right Bumper
+    (BTN_BIT_START, Key::BTN_START),
     (BTN_BIT_SELECT, Key::BTN_SELECT),
-    (BTN_BIT_L3,     Key::BTN_THUMBL),  // Left stick click
-    (BTN_BIT_R3,     Key::BTN_THUMBR),  // Right stick click
-    (BTN_BIT_GUIDE,  Key::BTN_MODE),    // Xbox guide button
+    (BTN_BIT_L3, Key::BTN_THUMBL),  // Left stick click
+    (BTN_BIT_R3, Key::BTN_THUMBR),  // Right stick click
+    (BTN_BIT_GUIDE, Key::BTN_MODE), // Xbox guide button
 ];
 
 // ---------------------------------------------------------------------------
@@ -124,19 +124,21 @@ impl VirtualGamepad {
         self.last_buttons = payload.buttons;
 
         // --- D-Pad (derived from button bits → hat axes) ---
-        let hat_x: i32 = match (payload.buttons & BTN_BIT_DPAD_L != 0,
-                                 payload.buttons & BTN_BIT_DPAD_R != 0)
-        {
+        let hat_x: i32 = match (
+            payload.buttons & BTN_BIT_DPAD_L != 0,
+            payload.buttons & BTN_BIT_DPAD_R != 0,
+        ) {
             (true, false) => -1,
-            (false, true) =>  1,
-            _             =>  0,
+            (false, true) => 1,
+            _ => 0,
         };
-        let hat_y: i32 = match (payload.buttons & BTN_BIT_DPAD_U != 0,
-                                 payload.buttons & BTN_BIT_DPAD_D != 0)
-        {
+        let hat_y: i32 = match (
+            payload.buttons & BTN_BIT_DPAD_U != 0,
+            payload.buttons & BTN_BIT_DPAD_D != 0,
+        ) {
             (true, false) => -1,
-            (false, true) =>  1,
-            _             =>  0,
+            (false, true) => 1,
+            _ => 0,
         };
         events.push(InputEvent::new(
             evdev::EventType::ABSOLUTE,
@@ -183,7 +185,9 @@ impl VirtualGamepad {
 
         // Synchronise.
         events.push(InputEvent::new(evdev::EventType::SYNCHRONIZATION, 0, 0));
-        self.device.emit(&events).context("emitting gamepad events")?;
+        self.device
+            .emit(&events)
+            .context("emitting gamepad events")?;
 
         Ok(())
     }
@@ -209,7 +213,9 @@ impl VirtualGamepad {
             events.push(InputEvent::new(evdev::EventType::ABSOLUTE, axis.0, 0));
         }
         events.push(InputEvent::new(evdev::EventType::SYNCHRONIZATION, 0, 0));
-        self.device.emit(&events).context("resetting gamepad state")?;
+        self.device
+            .emit(&events)
+            .context("resetting gamepad state")?;
         self.last_buttons = 0;
         Ok(())
     }

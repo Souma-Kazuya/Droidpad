@@ -21,13 +21,13 @@ pub const MAGIC_1: u8 = 0x50; // 'P'
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PacketType {
     /// Keyboard HID report.
-    Keyboard  = 0x01,
+    Keyboard = 0x01,
     /// Gamepad (Xbox 360 layout) report.
-    Gamepad   = 0x02,
+    Gamepad = 0x02,
     /// Keep-alive ping — no payload.
-    Ping      = 0x03,
+    Ping = 0x03,
     /// Rumble feedback sent from host → device.
-    Rumble    = 0x04,
+    Rumble = 0x04,
     /// Initial handshake JSON.
     Handshake = 0x05,
 }
@@ -70,10 +70,10 @@ impl Header {
     /// Expected payload length for each packet type (None = variable).
     pub fn expected_payload_len(pkt_type: PacketType) -> Option<u8> {
         match pkt_type {
-            PacketType::Keyboard  => Some(8),
-            PacketType::Gamepad   => Some(12),
-            PacketType::Ping      => Some(0),
-            PacketType::Rumble    => Some(2),
+            PacketType::Keyboard => Some(8),
+            PacketType::Gamepad => Some(12),
+            PacketType::Ping => Some(0),
+            PacketType::Rumble => Some(2),
             PacketType::Handshake => None, // variable
         }
     }
@@ -227,19 +227,22 @@ impl Packet {
                 // buf[1] is reserved
                 let mut keycodes = [0u8; 6];
                 keycodes.copy_from_slice(&buf[2..8]);
-                Ok(Payload::Keyboard(KeyboardPayload { modifiers, keycodes }))
+                Ok(Payload::Keyboard(KeyboardPayload {
+                    modifiers,
+                    keycodes,
+                }))
             }
 
             PacketType::Gamepad => {
                 if buf.len() < 12 {
                     bail!("Gamepad payload too short: {} bytes", buf.len());
                 }
-                let buttons   = u16::from_le_bytes([buf[0], buf[1]]);
-                let left_x    = i16::from_le_bytes([buf[2], buf[3]]);
-                let left_y    = i16::from_le_bytes([buf[4], buf[5]]);
-                let right_x   = i16::from_le_bytes([buf[6], buf[7]]);
-                let right_y   = i16::from_le_bytes([buf[8], buf[9]]);
-                let left_trigger  = buf[10];
+                let buttons = u16::from_le_bytes([buf[0], buf[1]]);
+                let left_x = i16::from_le_bytes([buf[2], buf[3]]);
+                let left_y = i16::from_le_bytes([buf[4], buf[5]]);
+                let right_x = i16::from_le_bytes([buf[6], buf[7]]);
+                let right_y = i16::from_le_bytes([buf[8], buf[9]]);
+                let left_trigger = buf[10];
                 let right_trigger = buf[11];
                 Ok(Payload::Gamepad(GamepadPayload {
                     buttons,
@@ -257,7 +260,7 @@ impl Packet {
                     bail!("Rumble payload too short: {} bytes", buf.len());
                 }
                 Ok(Payload::Rumble(RumblePayload {
-                    left:  buf[0],
+                    left: buf[0],
                     right: buf[1],
                 }))
             }
@@ -284,12 +287,7 @@ impl Packet {
         let length = payload_bytes.len() as u8;
 
         // Write header.
-        let hdr = [
-            MAGIC_0,
-            MAGIC_1,
-            u8::from(self.header.pkt_type),
-            length,
-        ];
+        let hdr = [MAGIC_0, MAGIC_1, u8::from(self.header.pkt_type), length];
         writer.write_all(&hdr).await.context("writing header")?;
 
         // Write payload.
@@ -344,7 +342,10 @@ impl Packet {
     /// Create a Rumble packet (host → device).
     pub fn rumble(left: u8, right: u8) -> Self {
         Packet {
-            header: Header { pkt_type: PacketType::Rumble, length: 2 },
+            header: Header {
+                pkt_type: PacketType::Rumble,
+                length: 2,
+            },
             payload: Payload::Rumble(RumblePayload { left, right }),
         }
     }
@@ -352,7 +353,10 @@ impl Packet {
     /// Create a Ping packet.
     pub fn ping() -> Self {
         Packet {
-            header: Header { pkt_type: PacketType::Ping, length: 0 },
+            header: Header {
+                pkt_type: PacketType::Ping,
+                length: 0,
+            },
             payload: Payload::Ping,
         }
     }
@@ -360,7 +364,10 @@ impl Packet {
     /// Create a Handshake packet.
     pub fn handshake(name: String) -> Self {
         Packet {
-            header: Header { pkt_type: PacketType::Handshake, length: 0 },
+            header: Header {
+                pkt_type: PacketType::Handshake,
+                length: 0,
+            },
             payload: Payload::Handshake(HandshakePayload {
                 version: "1".into(),
                 name,
@@ -388,9 +395,12 @@ mod tests {
     #[tokio::test]
     async fn test_packet_keyboard_roundtrip() {
         let pkt = Packet {
-            header: Header { pkt_type: PacketType::Keyboard, length: 8 },
+            header: Header {
+                pkt_type: PacketType::Keyboard,
+                length: 8,
+            },
             payload: Payload::Keyboard(KeyboardPayload {
-                modifiers: 0x05, // LCtrl + LAlt
+                modifiers: 0x05,                                // LCtrl + LAlt
                 keycodes: [0x04, 0x05, 0x06, 0x00, 0x00, 0x00], // A, B, C
             }),
         };
@@ -411,7 +421,10 @@ mod tests {
     #[tokio::test]
     async fn test_packet_gamepad_roundtrip() {
         let pkt = Packet {
-            header: Header { pkt_type: PacketType::Gamepad, length: 12 },
+            header: Header {
+                pkt_type: PacketType::Gamepad,
+                length: 12,
+            },
             payload: Payload::Gamepad(GamepadPayload {
                 buttons: 0x0001 | 0x0400, // A + DPAD_UP
                 left_x: -12345,
@@ -562,7 +575,10 @@ mod tests {
         let result = Packet::read_async(&mut cursor).await;
         assert!(result.is_err());
         let err = format!("{:#}", result.unwrap_err());
-        assert!(err.contains("Unknown packet type"), "Unexpected error: {err}");
+        assert!(
+            err.contains("Unknown packet type"),
+            "Unexpected error: {err}"
+        );
     }
 
     #[tokio::test]
@@ -573,7 +589,10 @@ mod tests {
         let result = Packet::read_async(&mut cursor).await;
         assert!(result.is_err());
         let err = format!("{:#}", result.unwrap_err());
-        assert!(err.contains("expects 8 payload bytes"), "Unexpected error: {err}");
+        assert!(
+            err.contains("expects 8 payload bytes"),
+            "Unexpected error: {err}"
+        );
     }
 
     #[tokio::test]
@@ -653,9 +672,12 @@ mod tests {
     #[tokio::test]
     async fn test_gamepad_extreme_values() {
         let pkt = Packet {
-            header: Header { pkt_type: PacketType::Gamepad, length: 12 },
+            header: Header {
+                pkt_type: PacketType::Gamepad,
+                length: 12,
+            },
             payload: Payload::Gamepad(GamepadPayload {
-                buttons: 0x7FFF,            // all 15 buttons pressed
+                buttons: 0x7FFF, // all 15 buttons pressed
                 left_x: i16::MIN,
                 left_y: i16::MAX,
                 right_x: i16::MIN,
@@ -689,9 +711,12 @@ mod tests {
     #[tokio::test]
     async fn test_keyboard_all_modifiers() {
         let pkt = Packet {
-            header: Header { pkt_type: PacketType::Keyboard, length: 8 },
+            header: Header {
+                pkt_type: PacketType::Keyboard,
+                length: 8,
+            },
             payload: Payload::Keyboard(KeyboardPayload {
-                modifiers: 0xFF, // all 8 modifier bits set
+                modifiers: 0xFF,                                // all 8 modifier bits set
                 keycodes: [0x04, 0x05, 0x06, 0x07, 0x08, 0x09], // A-F
             }),
         };
@@ -717,7 +742,10 @@ mod tests {
         let mut buf = Vec::new();
         Packet::ping().write_async(&mut buf).await.unwrap();
         Packet::rumble(10, 20).write_async(&mut buf).await.unwrap();
-        Packet::handshake("Test".into()).write_async(&mut buf).await.unwrap();
+        Packet::handshake("Test".into())
+            .write_async(&mut buf)
+            .await
+            .unwrap();
 
         let mut cursor = Cursor::new(buf);
         let p1 = Packet::read_async(&mut cursor).await.unwrap();

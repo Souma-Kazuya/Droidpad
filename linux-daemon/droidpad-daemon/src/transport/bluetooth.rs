@@ -15,8 +15,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
-use crate::protocol::packet::Packet;
 use super::{Connection, Transport};
+use crate::protocol::packet::Packet;
 
 /// Custom UUID used for DroidPad RFCOMM service.
 pub const DROIDPAD_UUID: &str = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -121,13 +121,19 @@ impl Transport for BluetoothTransport {
     async fn accept(&mut self) -> Result<Box<dyn Connection>> {
         if let Some(ref mut handle) = self.profile_handle {
             // Wait for incoming RFCOMM connection request from registered profile
-            let req = handle.next().await
+            let req = handle
+                .next()
+                .await
                 .context("Bluetooth profile connection request stream closed")?;
 
-            let stream = req.accept()
+            let stream = req
+                .accept()
                 .context("Accepting Bluetooth RFCOMM connection")?;
 
-            let peer_addr = stream.peer_addr().map(|a| a.to_string()).unwrap_or_else(|_| "Unknown BT".into());
+            let peer_addr = stream
+                .peer_addr()
+                .map(|a| a.to_string())
+                .unwrap_or_else(|_| "Unknown BT".into());
             info!("Bluetooth RFCOMM connected from {peer_addr}");
 
             Ok(Box::new(BluetoothConnection {

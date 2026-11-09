@@ -8,14 +8,14 @@
 //! Because this traffic is confined to localhost / the secure ADB tunnel,
 //! plain TCP is used for minimal latency (~1-3ms).
 
-use std::net::SocketAddr;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use std::net::SocketAddr;
 use tokio::net::{TcpListener, TcpStream};
 use tracing::info;
 
-use crate::protocol::packet::Packet;
 use super::{Connection, Transport};
+use crate::protocol::packet::Packet;
 
 // ---------------------------------------------------------------------------
 // UsbConnection

@@ -270,7 +270,9 @@ impl VirtualKeyboard {
         if !events.is_empty() {
             // Synchronise.
             events.push(InputEvent::new(evdev::EventType::SYNCHRONIZATION, 0, 0));
-            self.device.emit(&events).context("emitting keyboard events")?;
+            self.device
+                .emit(&events)
+                .context("emitting keyboard events")?;
         }
 
         self.pressed = new_pressed;
@@ -288,7 +290,9 @@ impl VirtualKeyboard {
             .map(|k| InputEvent::new(evdev::EventType::KEY, k.code(), 0))
             .collect();
         events.push(InputEvent::new(evdev::EventType::SYNCHRONIZATION, 0, 0));
-        self.device.emit(&events).context("releasing all keyboard keys")?;
+        self.device
+            .emit(&events)
+            .context("releasing all keyboard keys")?;
         Ok(())
     }
 }

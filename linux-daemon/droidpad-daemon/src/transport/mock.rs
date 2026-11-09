@@ -1,13 +1,13 @@
 //! Mock transport and connection implementations for testing.
 
-use std::collections::VecDeque;
-use std::sync::Arc;
 use anyhow::{bail, Result};
 use async_trait::async_trait;
+use std::collections::VecDeque;
+use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 
-use crate::protocol::packet::Packet;
 use super::{Connection, Transport};
+use crate::protocol::packet::Packet;
 
 // ---------------------------------------------------------------------------
 // In-Memory MockConnection (Queue-based)
@@ -32,7 +32,10 @@ impl MockConnection {
         }
     }
 
-    pub fn with_incoming(peer: impl Into<String>, packets: impl IntoIterator<Item = Packet>) -> Self {
+    pub fn with_incoming(
+        peer: impl Into<String>,
+        packets: impl IntoIterator<Item = Packet>,
+    ) -> Self {
         Self {
             peer: peer.into(),
             incoming: packets.into_iter().collect(),

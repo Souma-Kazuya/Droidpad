@@ -3,6 +3,8 @@
 //! Parses CLI arguments, initialises logging, spawns the connection daemon,
 //! and optionally launches the GTK4/libadwaita UI (system tray + settings).
 
+#![allow(dead_code)]
+
 mod daemon;
 mod protocol;
 mod transport;
@@ -94,7 +96,10 @@ fn main() -> Result<()> {
         .init();
 
     let args = Args::parse();
-    info!("DroidPad daemon starting (Wi-Fi port={}, BT name={:?})", args.port, args.bt_name);
+    info!(
+        "DroidPad daemon starting (Wi-Fi port={}, BT name={:?})",
+        args.port, args.bt_name
+    );
 
     // Build a watch channel so the daemon can broadcast connection state to the UI.
     let (state_tx, state_rx) = watch::channel(daemon::ConnectionState::Disconnected);
@@ -110,9 +115,9 @@ fn main() -> Result<()> {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()?;
-        rt.block_on(async move {
-            daemon::run(args.port, args.usb_port, args.bt_name, state_tx).await
-        })?;
+        rt.block_on(
+            async move { daemon::run(args.port, args.usb_port, args.bt_name, state_tx).await },
+        )?;
     } else {
         // GUI mode: GTK4 must run on the main thread; Tokio runs in background threads.
         let rt = Arc::new(

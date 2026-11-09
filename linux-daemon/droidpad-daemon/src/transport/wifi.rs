@@ -14,13 +14,13 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
+use rustls::ServerConfig;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::{server::TlsStream, TlsAcceptor};
-use rustls::ServerConfig;
 use tracing::{info, warn};
 
-use crate::protocol::packet::Packet;
 use super::{Connection, Transport};
+use crate::protocol::packet::Packet;
 
 // ---------------------------------------------------------------------------
 // WifiConnection
@@ -29,7 +29,7 @@ use super::{Connection, Transport};
 /// An accepted TLS-over-TCP connection.
 pub struct WifiConnection {
     stream: TlsStream<TcpStream>,
-    peer:   SocketAddr,
+    peer: SocketAddr,
 }
 
 #[async_trait]
@@ -54,10 +54,10 @@ impl Connection for WifiConnection {
 
 /// TCP+TLS transport with mDNS discovery.
 pub struct WifiTransport {
-    listener:    TcpListener,
-    acceptor:    TlsAcceptor,
-    _mdns:       ServiceDaemon,
-    port:        u16,
+    listener: TcpListener,
+    acceptor: TlsAcceptor,
+    _mdns: ServiceDaemon,
+    port: u16,
 }
 
 impl WifiTransport {
@@ -83,7 +83,7 @@ impl WifiTransport {
             "_droidpad._tcp.local.",
             "DroidPad",
             &format!("{hostname}.local."),
-            "",   // empty = auto-detect IP
+            "", // empty = auto-detect IP
             port,
             None, // no extra TXT records
         )
@@ -149,7 +149,7 @@ pub fn build_self_signed_tls_config() -> Result<Arc<ServerConfig>> {
         generate_simple_self_signed(subject_alt_names).context("generating self-signed cert")?;
 
     let cert_der = CertificateDer::from(cert.der().to_vec());
-    let key_der  = PrivateKeyDer::try_from(key_pair.serialize_der())
+    let key_der = PrivateKeyDer::try_from(key_pair.serialize_der())
         .map_err(|e| anyhow::anyhow!("invalid private key DER: {e}"))?;
 
     let config = ServerConfig::builder()
