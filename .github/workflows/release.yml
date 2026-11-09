@@ -36,67 +36,19 @@ jobs:
         with:
           workspaces: linux-daemon
 
-      - name: Build release binary
-        working-directory: linux-daemon
-        run: cargo build --release
-
       - name: Validate desktop entry
         run: desktop-file-validate linux-daemon/packaging/droidpad.desktop
 
-      - name: Package AppImage
+      - name: Build AppImage and Binaries
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
         run: |
-          # Download linuxdeploy and appimagetool with FUSE fallback
-          mkdir -p tools
-          curl -sSL -o tools/linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          curl -sSL -o tools/appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x tools/linuxdeploy tools/appimagetool
-
-          # Prepare AppDir
-          APPDIR="linux-daemon/target/AppDir"
-          rm -rf "${APPDIR}"
-          mkdir -p "${APPDIR}/usr/bin"
-          mkdir -p "${APPDIR}/usr/share/applications"
-          mkdir -p "${APPDIR}/usr/share/icons/hicolor/scalable/apps"
-          mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
-          mkdir -p "${APPDIR}/usr/share/glib-2.0/schemas"
-
-          cp linux-daemon/target/release/droidpad-daemon "${APPDIR}/usr/bin/droidpad-daemon"
-          chmod +x "${APPDIR}/usr/bin/droidpad-daemon"
-          cp linux-daemon/packaging/droidpad.desktop "${APPDIR}/usr/share/applications/droidpad.desktop"
-          cp linux-daemon/packaging/droidpad.desktop "${APPDIR}/droidpad.desktop"
-          cp linux-daemon/packaging/droidpad.svg "${APPDIR}/usr/share/icons/hicolor/scalable/apps/droidpad.svg"
-          cp linux-daemon/packaging/droidpad.svg "${APPDIR}/droidpad.svg"
-          cp linux-daemon/packaging/droidpad.png "${APPDIR}/usr/share/icons/hicolor/256x256/apps/droidpad.png"
-          cp linux-daemon/packaging/droidpad.png "${APPDIR}/droidpad.png"
-          cp linux-daemon/packaging/droidpad.png "${APPDIR}/.DirIcon"
-
-          # Bundle schemas
-          if [ -d /usr/share/glib-2.0/schemas ]; then
-            cp -r /usr/share/glib-2.0/schemas/* "${APPDIR}/usr/share/glib-2.0/schemas/" 2>/dev/null || true
-            glib-compile-schemas "${APPDIR}/usr/share/glib-2.0/schemas" || true
-          fi
-
-          # Create AppRun
-          cat << 'EOF' > "${APPDIR}/AppRun"
-          #!/bin/sh
-          HERE="$(dirname "$(readlink -f "${0}")")"
-          export PATH="${HERE}/usr/bin:${PATH}"
-          export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
-          export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-          export GSETTINGS_SCHEMA_DIR="${HERE}/usr/share/glib-2.0/schemas:${GSETTINGS_SCHEMA_DIR}"
-          exec "${HERE}/usr/bin/droidpad-daemon" "$@"
-          EOF
-          sed -i 's/^[ \t]*//' "${APPDIR}/AppRun"
-          chmod +x "${APPDIR}/AppRun"
-
-          # Package AppImage using appimagetool
           mkdir -p dist
-          ./tools/appimagetool --appimage-extract-and-run "${APPDIR}" dist/DroidPad-x86_64.AppImage
-          chmod +x dist/DroidPad-x86_64.AppImage
+          # Run the AppImage build script
+          chmod +x linux-daemon/packaging/build-appimage.sh
+          linux-daemon/packaging/build-appimage.sh dist
 
-          # Copy standalone binary and uinput setup script
+          # Copy standalone headless binary and uinput permission helper
           cp linux-daemon/target/release/droidpad-daemon dist/droidpad-daemon-linux-x86_64
           cp packaging/setup-uinput.sh dist/setup-uinput.sh
           chmod +x dist/setup-uinput.sh
@@ -116,7 +68,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -145,7 +97,6 @@ jobs:
           ./gradlew assembleRelease
 
           mkdir -p ../dist
-          # Find and copy output APK
           APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           if [ -z "$APK_PATH" ]; then
             echo "Error: Release APK not found!"

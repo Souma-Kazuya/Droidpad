@@ -90,6 +90,7 @@ fi
 
 # Configure linuxdeploy options
 export OUTPUT="${OUTPUT_FILE}"
+export LDAI_OUTPUT="${OUTPUT_FILE}"
 export NO_STRIP=1
 export ARCH="x86_64"
 
