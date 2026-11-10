@@ -36,7 +36,27 @@ android {
             } else {
                 // Fallback for CI/open-source release builds:
                 // Sign with debug key so generated APK can be installed on devices immediately
-                initWith(getByName("debug"))
+                val debugConfig = getByName("debug")
+                initWith(debugConfig)
+                val debugStore = storeFile ?: debugConfig.storeFile
+                if (debugStore != null && !debugStore.exists()) {
+                    debugStore.parentFile?.mkdirs()
+                    try {
+                        ProcessBuilder(
+                            "keytool", "-genkey", "-v",
+                            "-keystore", debugStore.absolutePath,
+                            "-storepass", "android",
+                            "-alias", "androiddebugkey",
+                            "-keypass", "android",
+                            "-keyalg", "RSA",
+                            "-keysize", "2048",
+                            "-validity", "10000",
+                            "-dname", "CN=Android Debug,O=Android,C=US"
+                        ).inheritIO().start().waitFor()
+                    } catch (e: Exception) {
+                        project.logger.warn("Could not auto-generate debug keystore: ${e.message}")
+                    }
+                }
             }
         }
     }
