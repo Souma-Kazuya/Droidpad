@@ -77,7 +77,7 @@ impl Header {
             PacketType::Gamepad => Some(12),
             PacketType::Ping => Some(0),
             PacketType::Rumble => Some(2),
-            PacketType::Handshake => None, // variable
+            PacketType::Handshake => None,   // variable
             PacketType::GameContext => None, // variable
         }
     }
@@ -375,7 +375,9 @@ impl Packet {
             genre: genre.into(),
             active_process: active_process.into(),
         };
-        let length = serde_json::to_string(&gc).map(|s| s.len() as u8).unwrap_or(0);
+        let length = serde_json::to_string(&gc)
+            .map(|s| s.len() as u8)
+            .unwrap_or(0);
         Packet {
             header: Header {
                 pkt_type: PacketType::GameContext,
