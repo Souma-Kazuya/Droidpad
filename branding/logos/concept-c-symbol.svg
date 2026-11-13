@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>DroidPad Logo Concept C</title>
+  <!-- DroidPad Concept C: The Cyber-Nexus Diamond D-Pad -->
+  <path fill="#0F1318" fill-rule="evenodd" d="
+    M 128 24
+    L 156 52
+    L 180 52
+    C 193.25 52 204 62.75 204 76
+    L 204 100
+    L 232 128
+    L 204 156
+    L 204 180
+    C 204 193.25 193.25 204 180 204
+    L 156 204
+    L 128 232
+    L 100 204
+    L 76 204
+    C 62.75 204 52 193.25 52 180
+    L 52 156
+    L 24 128
+    L 52 100
+    L 52 76
+    C 52 62.75 62.75 52 76 52
+    L 100 52
+    Z
+
+    M 128 78
+    L 178 128
+    L 128 178
+    L 78 128
+    Z
+
+    M 128 106
+    A 22 22 0 1 0 128 150
+    A 22 22 0 1 0 128 106
+    Z
+  "/>
+</svg>

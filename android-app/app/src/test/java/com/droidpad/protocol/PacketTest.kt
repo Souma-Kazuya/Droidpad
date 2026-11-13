@@ -121,6 +121,34 @@ class PacketTest {
     }
 
     @Test
+    fun testGameContextRoundtrip() {
+        val original = Packet.GameContext(
+            GameContextPayload(
+                gameTitle = "Elden Ring",
+                genre = "soulslike",
+                activeProcess = "eldenring.exe"
+            )
+        )
+
+        val out = ByteArrayOutputStream()
+        original.writeTo(out)
+
+        val bytes = out.toByteArray()
+        assertEquals(0x44.toByte(), bytes[0])
+        assertEquals(0x50.toByte(), bytes[1])
+        assertEquals(PacketType.GAME_CONTEXT.id, bytes[2])
+
+        val input = ByteArrayInputStream(bytes)
+        val read = Packet.readFrom(input)
+
+        assertTrue(read is Packet.GameContext)
+        val gc = (read as Packet.GameContext).payload
+        assertEquals("Elden Ring", gc.gameTitle)
+        assertEquals("soulslike", gc.genre)
+        assertEquals("eldenring.exe", gc.activeProcess)
+    }
+
+    @Test
     fun testBadMagicRejection() {
         val badBytes = byteArrayOf(0x00, 0x00, 0x03, 0x00)
         try {

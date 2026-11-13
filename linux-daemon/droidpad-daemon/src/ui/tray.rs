@@ -2,7 +2,7 @@
 
 use gtk4::glib;
 use gtk4::prelude::*;
-use gtk4::{Align, Box as GtkBox, Button, Label, Orientation};
+use gtk4::{Align, Box as GtkBox, Button, Image, Label, Orientation};
 use libadwaita::prelude::*;
 use libadwaita::{Application, HeaderBar, Window};
 use tokio::sync::watch;
@@ -38,11 +38,11 @@ pub fn build_main_window(app: &Application, state_rx: watch::Receiver<Connection
     content.set_valign(Align::Center);
     content.set_halign(Align::Center);
 
-    let icon_label = Label::builder()
-        .label("🎮")
-        .css_classes(["title-1"])
+    let icon = Image::builder()
+        .icon_name("droidpad")
+        .pixel_size(64)
         .build();
-    content.append(&icon_label);
+    content.append(&icon);
 
     let status_title = Label::builder()
         .label("Ready to Connect")

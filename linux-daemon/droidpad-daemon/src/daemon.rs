@@ -175,6 +175,9 @@ pub async fn handle_client_session<C: Connection + ?Sized>(
             crate::protocol::packet::Payload::Rumble(_) => {
                 // Host does not consume rumble
             }
+            crate::protocol::packet::Payload::GameContext(_) => {
+                // Host broadcast / echo not consumed on host
+            }
         }
     }
 

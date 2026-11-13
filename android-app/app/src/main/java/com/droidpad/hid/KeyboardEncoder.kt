@@ -67,6 +67,10 @@ class KeyboardEncoder {
         const val MOD_LSHIFT: Byte = 0x02
         const val MOD_LALT: Byte   = 0x04
         const val MOD_LMETA: Byte  = 0x08
+        const val MOD_RCTRL: Byte  = 0x10
+        const val MOD_RSHIFT: Byte = 0x20
+        const val MOD_RALT: Byte   = 0x40
+        const val MOD_RMETA: Byte  = (0x80).toByte()
 
         // HID Usage IDs (USB HID Usage Tables 1.3, Section 10)
         const val HID_A: Byte = 0x04
@@ -107,13 +111,22 @@ class KeyboardEncoder {
         const val HID_9: Byte = 0x26
         const val HID_0: Byte = 0x27
 
-        const val HID_ENTER: Byte     = 0x28
-        const val HID_ESC: Byte       = 0x29
-        const val HID_BACKSPACE: Byte = 0x2A
-        const val HID_TAB: Byte       = 0x2B
-        const val HID_SPACE: Byte     = 0x2C
-        const val HID_MINUS: Byte     = 0x2D
-        const val HID_EQUAL: Byte     = 0x2E
+        const val HID_ENTER: Byte         = 0x28
+        const val HID_ESC: Byte           = 0x29
+        const val HID_BACKSPACE: Byte     = 0x2A
+        const val HID_TAB: Byte           = 0x2B
+        const val HID_SPACE: Byte         = 0x2C
+        const val HID_MINUS: Byte         = 0x2D
+        const val HID_EQUAL: Byte         = 0x2E
+        const val HID_LEFT_BRACKET: Byte  = 0x2F
+        const val HID_RIGHT_BRACKET: Byte = 0x30
+        const val HID_BACKSLASH: Byte     = 0x31
+        const val HID_SEMICOLON: Byte     = 0x33
+        const val HID_APOSTROPHE: Byte    = 0x34
+        const val HID_COMMA: Byte         = 0x36
+        const val HID_DOT: Byte           = 0x37
+        const val HID_SLASH: Byte         = 0x38
+        const val HID_CAPSLOCK: Byte      = 0x39
 
         const val HID_RIGHT: Byte = 0x4F
         const val HID_LEFT: Byte  = 0x50

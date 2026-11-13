@@ -19,7 +19,7 @@ pub fn show_settings_window(app: &Application) {
 
     // ── Transports Group ───────────────────────────────────────────────────────
     let transport_group = PreferencesGroup::new();
-    transport_group.set_title("Transports & Connections");
+    transport_group.set_title("Transports &amp; Connections");
     transport_group.set_description(Some("Configure local listeners on this machine"));
 
     let wifi_row = ActionRow::builder()

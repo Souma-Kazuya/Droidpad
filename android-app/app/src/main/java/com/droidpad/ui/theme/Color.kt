@@ -2,14 +2,41 @@ package com.droidpad.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val XboxGreen = Color(0xFF107C10)
-val XboxGreenLight = Color(0xFF2EA02E)
-val DarkBackground = Color(0xFF121212)
-val DarkSurface = Color(0xFF1E1E1E)
-val DarkSurfaceVariant = Color(0xFF2D2D2D)
+// Background and Surface Colors from Design
+val DarkSlateBackground = Color(0xFF0F1318)
+val DarkControlCard = Color(0xFF171E27)
+val DarkControlElement = Color(0xFF232A35)
+val DarkControlElementPressed = Color(0xFF343E4E)
 
-// Gamepad button colors
-val ButtonA = Color(0xFF2E7D32) // Green
-val ButtonB = Color(0xFFC62828) // Red
-val ButtonX = Color(0xFF1565C0) // Blue
-val ButtonY = Color(0xFFF9A825) // Yellow
+// Accent & Status Colors
+val AccentMintGreen = Color(0xFF4ADE80)
+val AccentMintGreenPressed = Color(0xFF38B267)
+val StatusGreen = Color(0xFF4ADE80)
+
+// Text Colors
+val TextWhite = Color(0xFFFFFFFF)
+val TextDark = Color(0xFF0F1318)
+val TextMuted = Color(0xFF94A3B8)
+
+// Joystick Colors
+val JoystickOutline = Color(0xFF2A3442)
+val JoystickBaseColor = Color(0xFF131921)
+val JoystickThumbColor = Color(0xFF2B3543)
+val JoystickThumbBorder = Color(0xFF3E4D60)
+
+// Gamepad ABXY Diamond Colors (matching Xbox layout in design)
+val ButtonColorA = Color(0xFF4ADE80) // Mint Green
+val ButtonColorB = Color(0xFFF87171) // Salmon Red / Coral
+val ButtonColorX = Color(0xFF60A5FA) // Sky Blue
+val ButtonColorY = Color(0xFFFCD34D) // Warm Yellow
+
+// Legacy aliases for backwards compatibility
+val XboxGreen = AccentMintGreen
+val XboxGreenLight = Color(0xFF6EE7B7)
+val DarkBackground = DarkSlateBackground
+val DarkSurface = DarkControlCard
+val DarkSurfaceVariant = DarkControlElement
+val ButtonA = ButtonColorA
+val ButtonB = ButtonColorB
+val ButtonX = ButtonColorX
+val ButtonY = ButtonColorY

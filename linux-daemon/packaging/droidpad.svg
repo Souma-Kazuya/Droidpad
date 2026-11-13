@@ -1,104 +1,73 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>DroidPad Linux Daemon Icon</title>
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1b1d24"/>
-      <stop offset="100%" stop-color="#0e1015"/>
+    <linearGradient id="linuxBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#232A35" />
+      <stop offset="100%" stop-color="#171E27" />
     </linearGradient>
-    <linearGradient id="padGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#2a2e39"/>
-      <stop offset="100%" stop-color="#181a20"/>
-    </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#107C10"/>
-      <stop offset="100%" stop-color="#16a34a"/>
-    </linearGradient>
-    <linearGradient id="phoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#3b4252"/>
-      <stop offset="100%" stop-color="#232731"/>
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
-    </filter>
   </defs>
 
-  <!-- Background rounded squircle -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
-  
-  <!-- Subtle border highlight -->
-  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+  <!-- Desktop Tile -->
+  <rect x="12" y="12" width="232" height="232" rx="48" fill="url(#linuxBgGrad)" stroke="#343E4E" stroke-width="2" />
 
-  <!-- Gamepad Body -->
-  <g filter="url(#shadow)">
-    <!-- Main controller contour -->
-    <path d="M150 170 C100 170 60 210 60 270 C60 330 90 410 130 420 C160 428 190 380 210 350 C230 340 282 340 302 350 C322 380 352 428 382 420 C422 410 452 330 452 270 C452 210 412 170 362 170 Z" fill="url(#padGrad)" stroke="#373e4d" stroke-width="3"/>
+  <!-- Controller Mark -->
+  <g transform="translate(13, 13) scale(0.9)">
+    <path fill="#4ADE80" fill-rule="evenodd" d="
+      M 84 52
+      C 112 52 116 62 128 62
+      C 140 62 144 52 172 52
+      C 212 52 236 84 232 140
+      C 228 196 200 212 178 200
+      C 160 190 148 156 128 156
+      C 108 156 96 190 78 200
+      C 56 212 28 196 24 140
+      C 20 84 44 52 84 52 Z
+
+      M 78 98
+      C 80.2 98 82 99.8 82 102
+      L 82 114
+      L 94 114
+      C 96.2 114 98 115.8 98 118
+      L 98 124
+      C 98 126.2 96.2 128 94 128
+      L 82 128
+      L 82 140
+      C 82 142.2 80.2 144 78 144
+      L 72 144
+      C 69.8 144 68 142.2 68 140
+      L 68 128
+      L 56 128
+      C 53.8 128 52 126.2 52 124
+      L 52 118
+      C 52 115.8 53.8 114 56 114
+      L 68 114
+      L 68 102
+      C 68 99.8 69.8 98 72 98
+      Z
+
+      M 181 100
+      A 7 7 0 1 0 181 114
+      A 7 7 0 1 0 181 100 Z
+
+      M 195 114
+      A 7 7 0 1 0 195 128
+      A 7 7 0 1 0 195 114 Z
+
+      M 181 128
+      A 7 7 0 1 0 181 142
+      A 7 7 0 1 0 181 128 Z
+
+      M 167 114
+      A 7 7 0 1 0 167 128
+      A 7 7 0 1 0 167 114 Z
+
+      M 124 100
+      C 124 97.8 125.8 96 128 96
+      C 130.2 96 132 97.8 132 100
+      L 132 122
+      C 132 124.2 130.2 126 128 126
+      C 125.8 126 124 124.2 124 122
+      Z
+    "/>
   </g>
-
-  <!-- Left / Right Bumpers -->
-  <path d="M110 168 C120 142 160 136 200 144 L190 166 Z" fill="#323846"/>
-  <path d="M402 168 C392 142 352 136 312 144 L322 166 Z" fill="#323846"/>
-
-  <!-- Left D-Pad -->
-  <g transform="translate(132, 240)">
-    <rect x="22" y="0" width="16" height="60" rx="3" fill="#1b1d24" stroke="#434c5e" stroke-width="1.5"/>
-    <rect x="0" y="22" width="60" height="16" rx="3" fill="#1b1d24" stroke="#434c5e" stroke-width="1.5"/>
-    <circle cx="30" cy="30" r="5" fill="#2e3440"/>
-  </g>
-
-  <!-- Right ABXY Diamond -->
-  <g transform="translate(322, 235)">
-    <!-- X (West) -->
-    <circle cx="15" cy="35" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
-    <text x="15" y="39.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#38bdf8" text-anchor="middle">X</text>
-    
-    <!-- Y (North) -->
-    <circle cx="35" cy="15" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
-    <text x="35" y="19.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#facc15" text-anchor="middle">Y</text>
-    
-    <!-- B (East) -->
-    <circle cx="55" cy="35" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
-    <text x="55" y="39.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#ef4444" text-anchor="middle">B</text>
-    
-    <!-- A (South) -->
-    <circle cx="35" cy="55" r="11" fill="#1e222b" stroke="#3b4252" stroke-width="1.5"/>
-    <text x="35" y="59.5" font-family="system-ui, sans-serif" font-size="12" font-weight="900" fill="#22c55e" text-anchor="middle">A</text>
-  </g>
-
-  <!-- Left Thumbstick (Offset south-west) -->
-  <g transform="translate(185, 305)">
-    <circle cx="0" cy="0" r="22" fill="#16181e" stroke="#4c566a" stroke-width="2"/>
-    <circle cx="0" cy="0" r="17" fill="#242832"/>
-    <circle cx="0" cy="0" r="9" fill="#107C10" fill-opacity="0.3"/>
-  </g>
-
-  <!-- Right Thumbstick (Offset south-center) -->
-  <g transform="translate(325, 305)">
-    <circle cx="0" cy="0" r="22" fill="#16181e" stroke="#4c566a" stroke-width="2"/>
-    <circle cx="0" cy="0" r="17" fill="#242832"/>
-    <circle cx="0" cy="0" r="9" fill="#107C10" fill-opacity="0.3"/>
-  </g>
-
-  <!-- Center: Stylized Smartphone Bridge Symbol -->
-  <g transform="translate(226, 175)">
-    <!-- Phone body -->
-    <rect x="0" y="0" width="60" height="106" rx="12" fill="url(#phoneGrad)" stroke="url(#accentGrad)" stroke-width="3"/>
-    
-    <!-- Screen -->
-    <rect x="4" y="10" width="52" height="84" rx="6" fill="#101318"/>
-    
-    <!-- Signal / Wi-Fi Wave inside screen -->
-    <path d="M 20 40 A 15 15 0 0 1 40 40" fill="none" stroke="#107C10" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 24 47 A 9 9 0 0 1 36 47" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="30" cy="54" r="2.5" fill="#4ade80"/>
-    
-    <!-- DroidPad branding initials inside screen -->
-    <text x="30" y="76" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="1" text-anchor="middle">DP</text>
-
-    <!-- Home indicator bar -->
-    <rect x="22" y="99" width="16" height="2" rx="1" fill="#4c566a"/>
-  </g>
-
-  <!-- Guide / Xbox Button Glow -->
-  <circle cx="256" cy="308" r="14" fill="#107C10" filter="url(#shadow)"/>
-  <circle cx="256" cy="308" r="12" fill="#148e14"/>
-  <path d="M250 304 Q256 312 262 304 M250 312 Q256 304 262 312" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none"/>
 </svg>

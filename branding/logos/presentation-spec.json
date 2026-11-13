@@ -1,0 +1,25 @@
+{
+  "brand": "DroidPad",
+  "tagline": "Turn Android into a Linux Gamepad",
+  "brief": "A high-performance bridge that transforms Android devices into low-latency virtual controllers and keyboards for Linux with an embedded Mini AI game assistant.",
+  "adjectives": ["Electric", "Responsive", "Precision", "Native"],
+  "industry": "software",
+  "brand_color": "#4ADE80",
+  "greyscale": false,
+  "final": true,
+  "round": 1,
+  "concepts": [
+    {
+      "name": "The Synapse Controller",
+      "symbol": "droidpad-symbol.svg",
+      "avatar": "droidpad-android-icon.svg",
+      "idea": "Contoured ergonomic controller silhouette with central wireless transmission node.",
+      "rationale": [
+        "Unmistakable handheld controller contour instantly communicates the core purpose of DroidPad.",
+        "Internal negative-space D-pad on the left and diamond button cluster on the right provide perfect tactile cues.",
+        "Central vertical pill represents the wireless pulse link between the mobile transmitter and the Linux kernel receiver."
+      ]
+    }
+  ],
+  "recommendation": "The Synapse Controller creates an instantly recognisable icon for both the Android Launcher and the Linux Desktop, scaling effortlessly down to a 16px system tray indicator."
+}

@@ -30,6 +30,8 @@ pub enum PacketType {
     Rumble = 0x04,
     /// Initial handshake JSON.
     Handshake = 0x05,
+    /// Active game context JSON (host → device) for on-device AI assistance.
+    GameContext = 0x06,
 }
 
 impl TryFrom<u8> for PacketType {
@@ -42,6 +44,7 @@ impl TryFrom<u8> for PacketType {
             0x03 => Ok(Self::Ping),
             0x04 => Ok(Self::Rumble),
             0x05 => Ok(Self::Handshake),
+            0x06 => Ok(Self::GameContext),
             other => bail!("Unknown packet type byte: 0x{other:02X}"),
         }
     }
@@ -75,6 +78,7 @@ impl Header {
             PacketType::Ping => Some(0),
             PacketType::Rumble => Some(2),
             PacketType::Handshake => None, // variable
+            PacketType::GameContext => None, // variable
         }
     }
 }
@@ -132,6 +136,14 @@ pub struct HandshakePayload {
     pub name: String,
 }
 
+/// Active game context JSON payload (host → device) for AI assistant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameContextPayload {
+    pub game_title: String,
+    pub genre: String,
+    pub active_process: String,
+}
+
 // ---------------------------------------------------------------------------
 // Payload enum + top-level Packet
 // ---------------------------------------------------------------------------
@@ -144,6 +156,7 @@ pub enum Payload {
     Ping,
     Rumble(RumblePayload),
     Handshake(HandshakePayload),
+    GameContext(GameContextPayload),
 }
 
 /// A complete DroidPad wire packet.
@@ -271,6 +284,13 @@ impl Packet {
                     serde_json::from_str(json).context("Handshake JSON parse error")?;
                 Ok(Payload::Handshake(hs))
             }
+
+            PacketType::GameContext => {
+                let json = std::str::from_utf8(buf).context("GameContext payload is not UTF-8")?;
+                let gc: GameContextPayload =
+                    serde_json::from_str(json).context("GameContext JSON parse error")?;
+                Ok(Payload::GameContext(gc))
+            }
         }
     }
 
@@ -332,12 +352,38 @@ impl Packet {
                 let json = serde_json::to_string(hs).context("serialising handshake JSON")?;
                 Ok(json.into_bytes())
             }
+
+            Payload::GameContext(gc) => {
+                let json = serde_json::to_string(gc).context("serialising game context JSON")?;
+                Ok(json.into_bytes())
+            }
         }
     }
 
     // ---------------------------------------------------------------------------
     // Convenience constructors
     // ---------------------------------------------------------------------------
+
+    /// Create a GameContext packet (host → device) for on-device AI tips.
+    pub fn game_context(
+        game_title: impl Into<String>,
+        genre: impl Into<String>,
+        active_process: impl Into<String>,
+    ) -> Self {
+        let gc = GameContextPayload {
+            game_title: game_title.into(),
+            genre: genre.into(),
+            active_process: active_process.into(),
+        };
+        let length = serde_json::to_string(&gc).map(|s| s.len() as u8).unwrap_or(0);
+        Packet {
+            header: Header {
+                pkt_type: PacketType::GameContext,
+                length,
+            },
+            payload: Payload::GameContext(gc),
+        }
+    }
 
     /// Create a Rumble packet (host → device).
     pub fn rumble(left: u8, right: u8) -> Self {
@@ -480,12 +526,13 @@ mod tests {
         assert_eq!(PacketType::try_from(0x03).unwrap(), PacketType::Ping);
         assert_eq!(PacketType::try_from(0x04).unwrap(), PacketType::Rumble);
         assert_eq!(PacketType::try_from(0x05).unwrap(), PacketType::Handshake);
+        assert_eq!(PacketType::try_from(0x06).unwrap(), PacketType::GameContext);
     }
 
     #[test]
     fn test_packet_type_try_from_invalid() {
         assert!(PacketType::try_from(0x00).is_err());
-        assert!(PacketType::try_from(0x06).is_err());
+        assert!(PacketType::try_from(0x07).is_err());
         assert!(PacketType::try_from(0xFF).is_err());
     }
 
@@ -776,6 +823,24 @@ mod tests {
         let parsed = Packet::read_async(&mut cursor).await.unwrap();
         if let Payload::Handshake(hs) = parsed.payload {
             assert_eq!(hs.name, "小米14 Ultra");
+        } else {
+            panic!("Wrong payload variant");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_packet_game_context_roundtrip() {
+        let pkt = Packet::game_context("Elden Ring", "soulslike", "eldenring.exe");
+        let mut buf = Vec::new();
+        pkt.write_async(&mut buf).await.unwrap();
+
+        let mut cursor = Cursor::new(buf);
+        let parsed = Packet::read_async(&mut cursor).await.unwrap();
+        assert_eq!(parsed.header.pkt_type, PacketType::GameContext);
+        if let Payload::GameContext(gc) = parsed.payload {
+            assert_eq!(gc.game_title, "Elden Ring");
+            assert_eq!(gc.genre, "soulslike");
+            assert_eq!(gc.active_process, "eldenring.exe");
         } else {
             panic!("Wrong payload variant");
         }

@@ -55,6 +55,7 @@ class WifiTransport(
     companion object {
         /**
          * Discover local DroidPad Linux hosts via mDNS / NSD service discovery.
+         * Hardened with a serialized resolution queue to prevent NsdManager FAILURE_ALREADY_ACTIVE errors.
          */
         fun discoverHosts(
             context: Context,
@@ -63,23 +64,73 @@ class WifiTransport(
             val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
             val serviceType = "_droidpad._tcp."
 
-            val listener = object : NsdManager.DiscoveryListener {
-                override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {}
-                override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {}
-                override fun onDiscoveryStarted(serviceType: String?) {}
-                override fun onDiscoveryStopped(serviceType: String?) {}
+            val pendingResolutions = java.util.ArrayDeque<NsdServiceInfo>()
+            var isResolving = false
+            val lock = Any()
 
-                override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-                    if (serviceInfo?.serviceType?.contains("droidpad") == true) {
-                        nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
-                            override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {}
-                            override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
+            fun resolveNext() {
+                val nextService: NsdServiceInfo
+                synchronized(lock) {
+                    if (isResolving || pendingResolutions.isEmpty()) {
+                        return
+                    }
+                    isResolving = true
+                    nextService = pendingResolutions.removeFirst()
+                }
+
+                try {
+                    nsdManager.resolveService(nextService, object : NsdManager.ResolveListener {
+                        override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
+                            synchronized(lock) {
+                                isResolving = false
+                            }
+                            resolveNext()
+                        }
+
+                        override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
+                            try {
                                 resolvedInfo?.let {
                                     val ip = it.host?.hostAddress ?: return@let
                                     onHostFound(it.serviceName, ip, it.port)
                                 }
+                            } finally {
+                                synchronized(lock) {
+                                    isResolving = false
+                                }
+                                resolveNext()
                             }
-                        })
+                        }
+                    })
+                } catch (e: Exception) {
+                    synchronized(lock) {
+                        isResolving = false
+                    }
+                    resolveNext()
+                }
+            }
+
+            val listener = object : NsdManager.DiscoveryListener {
+                override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {}
+                override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
+                    synchronized(lock) {
+                        pendingResolutions.clear()
+                        isResolving = false
+                    }
+                }
+                override fun onDiscoveryStarted(serviceType: String?) {}
+                override fun onDiscoveryStopped(serviceType: String?) {
+                    synchronized(lock) {
+                        pendingResolutions.clear()
+                        isResolving = false
+                    }
+                }
+
+                override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
+                    if (serviceInfo?.serviceType?.contains("droidpad") == true) {
+                        synchronized(lock) {
+                            pendingResolutions.addLast(serviceInfo)
+                        }
+                        resolveNext()
                     }
                 }
 

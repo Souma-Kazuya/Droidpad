@@ -16,7 +16,8 @@ enum class PacketType(val id: Byte) {
     GAMEPAD(0x02),
     PING(0x03),
     RUMBLE(0x04),
-    HANDSHAKE(0x05);
+    HANDSHAKE(0x05),
+    GAME_CONTEXT(0x06);
 
     companion object {
         fun fromId(id: Byte): PacketType = entries.firstOrNull { it.id == id }
@@ -62,12 +63,19 @@ data class HandshakePayload(
     val name: String
 )
 
+data class GameContextPayload(
+    val gameTitle: String,
+    val genre: String,
+    val activeProcess: String
+)
+
 sealed class Packet(val type: PacketType) {
     data class Keyboard(val payload: KeyboardPayload) : Packet(PacketType.KEYBOARD)
     data class Gamepad(val payload: GamepadPayload) : Packet(PacketType.GAMEPAD)
     object Ping : Packet(PacketType.PING)
     data class Rumble(val payload: RumblePayload) : Packet(PacketType.RUMBLE)
     data class Handshake(val payload: HandshakePayload) : Packet(PacketType.HANDSHAKE)
+    data class GameContext(val payload: GameContextPayload) : Packet(PacketType.GAME_CONTEXT)
 
     fun writeTo(output: OutputStream) {
         val payloadBytes = when (this) {
@@ -95,6 +103,14 @@ sealed class Packet(val type: PacketType) {
                 val json = JSONObject().apply {
                     put("version", payload.version)
                     put("name", payload.name)
+                }.toString().toByteArray(Charsets.UTF_8)
+                json
+            }
+            is GameContext -> {
+                val json = JSONObject().apply {
+                    put("game_title", payload.gameTitle)
+                    put("genre", payload.genre)
+                    put("active_process", payload.activeProcess)
                 }.toString().toByteArray(Charsets.UTF_8)
                 json
             }
@@ -167,6 +183,17 @@ sealed class Packet(val type: PacketType) {
                     val jsonStr = String(payloadBytes, Charsets.UTF_8)
                     val json = JSONObject(jsonStr)
                     Handshake(HandshakePayload(json.getString("version"), json.getString("name")))
+                }
+                PacketType.GAME_CONTEXT -> {
+                    val jsonStr = String(payloadBytes, Charsets.UTF_8)
+                    val json = JSONObject(jsonStr)
+                    GameContext(
+                        GameContextPayload(
+                            gameTitle = json.optString("game_title", "Unknown Game"),
+                            genre = json.optString("genre", "general"),
+                            activeProcess = json.optString("active_process", "")
+                        )
+                    )
                 }
             }
         }

@@ -1,27 +1,33 @@
 package com.droidpad.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.droidpad.ui.theme.*
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+/**
+ * High-performance virtual analog joystick matching the design in the mockups.
+ * Features an outer ring boundary, tactile thumbstick knob, and isolated
+ * multi-touch pointer tracking that never interferes with adjacent buttons.
+ */
 @Composable
 fun VirtualJoystick(
     modifier: Modifier = Modifier,
-    size: Dp = 140.dp,
-    stickColor: Color = Color(0xFF107C10),
-    baseColor: Color = Color(0xFF2A2A2A),
+    size: Dp = 135.dp,
     onMove: (x: Float, y: Float) -> Unit
 ) {
     var thumbOffset by remember { mutableStateOf(Offset.Zero) }
@@ -29,65 +35,101 @@ fun VirtualJoystick(
     Box(
         modifier = modifier
             .size(size)
-            .pointerInput(Unit) {
-                val radius = (size.toPx() / 2f)
-                val maxThumbDistance = radius * 0.7f
+            .pointerInput(size) {
+                val radius = size.toPx() / 2f
+                val maxThumbDistance = radius * 0.65f
+                val center = Offset(radius, radius)
 
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        val center = Offset(radius, radius)
-                        val delta = offset - center
-                        val dist = sqrt(delta.x * delta.x + delta.y * delta.y)
-                        val clampedOffset = if (dist > maxThumbDistance) {
-                            val angle = atan2(delta.y, delta.x)
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val initialDelta = down.position - center
+                    val initialDist = sqrt(initialDelta.x * initialDelta.x + initialDelta.y * initialDelta.y)
+
+                    // Only capture if touch originated within joystick base boundary
+                    if (initialDist <= radius) {
+                        down.consume()
+                        val pointerId = down.id
+
+                        val clamped = if (initialDist > maxThumbDistance) {
+                            val angle = atan2(initialDelta.y, initialDelta.x)
                             Offset(cos(angle) * maxThumbDistance, sin(angle) * maxThumbDistance)
                         } else {
-                            delta
+                            initialDelta
                         }
-                        thumbOffset = clampedOffset
-                        onMove(clampedOffset.x / maxThumbDistance, clampedOffset.y / maxThumbDistance)
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        val newOffset = thumbOffset + dragAmount
-                        val dist = sqrt(newOffset.x * newOffset.x + newOffset.y * newOffset.y)
-                        val clampedOffset = if (dist > maxThumbDistance) {
-                            val angle = atan2(newOffset.y, newOffset.x)
-                            Offset(cos(angle) * maxThumbDistance, sin(angle) * maxThumbDistance)
-                        } else {
-                            newOffset
+                        thumbOffset = clamped
+                        onMove(clamped.x / maxThumbDistance, clamped.y / maxThumbDistance)
+
+                        // Track continuous movement for this specific pointer
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val pointerChange = event.changes.find { it.id == pointerId }
+
+                            if (pointerChange == null || !pointerChange.pressed) {
+                                // Pointer lifted or canceled
+                                thumbOffset = Offset.Zero
+                                onMove(0f, 0f)
+                                break
+                            }
+
+                            pointerChange.consume()
+                            val currentDelta = pointerChange.position - center
+                            val currentDist = sqrt(currentDelta.x * currentDelta.x + currentDelta.y * currentDelta.y)
+
+                            val newClamped = if (currentDist > maxThumbDistance) {
+                                val angle = atan2(currentDelta.y, currentDelta.x)
+                                Offset(cos(angle) * maxThumbDistance, sin(angle) * maxThumbDistance)
+                            } else {
+                                currentDelta
+                            }
+                            thumbOffset = newClamped
+                            onMove(newClamped.x / maxThumbDistance, newClamped.y / maxThumbDistance)
                         }
-                        thumbOffset = clampedOffset
-                        onMove(clampedOffset.x / maxThumbDistance, clampedOffset.y / maxThumbDistance)
-                    },
-                    onDragEnd = {
-                        thumbOffset = Offset.Zero
-                        onMove(0f, 0f)
-                    },
-                    onDragCancel = {
-                        thumbOffset = Offset.Zero
-                        onMove(0f, 0f)
                     }
-                )
+                }
             }
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
             val center = Offset(size.toPx() / 2f, size.toPx() / 2f)
             val baseRadius = size.toPx() / 2f
-            val thumbRadius = baseRadius * 0.35f
+            val thumbRadius = baseRadius * 0.38f
 
-            // Outer circle base
+            // 1. Base translucent fill
             drawCircle(
-                color = baseColor,
-                radius = baseRadius,
+                color = JoystickBaseColor,
+                radius = baseRadius - 2.dp.toPx(),
                 center = center
             )
 
-            // Inner stick thumb
+            // 2. Outer ring border
             drawCircle(
-                color = stickColor,
+                color = JoystickOutline,
+                radius = baseRadius - 2.dp.toPx(),
+                center = center,
+                style = Stroke(width = 2.dp.toPx())
+            )
+
+            // 3. Thumbstick knob outer shadow/border
+            val thumbCenter = center + thumbOffset
+            drawCircle(
+                color = JoystickThumbBorder,
                 radius = thumbRadius,
-                center = center + thumbOffset
+                center = thumbCenter,
+                style = Stroke(width = 2.dp.toPx())
+            )
+
+            // 4. Thumbstick knob solid body
+            drawCircle(
+                color = JoystickThumbColor,
+                radius = thumbRadius - 1.dp.toPx(),
+                center = thumbCenter
+            )
+
+            // 5. Thumbstick inner grip contour ring
+            drawCircle(
+                color = JoystickOutline,
+                radius = thumbRadius * 0.5f,
+                center = thumbCenter,
+                style = Stroke(width = 1.5.dp.toPx())
             )
         }
     }

@@ -84,13 +84,24 @@ class MainActivity : ComponentActivity() {
                         composable("keyboard") {
                             KeyboardScreen(
                                 service = boundService,
+                                onNavigateToGamepad = {
+                                    navController.navigate("gamepad") {
+                                        popUpTo("home")
+                                    }
+                                },
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("gamepad") {
                             GamepadScreen(
                                 service = boundService,
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateToKeyboard = {
+                                    navController.navigate("keyboard") {
+                                        popUpTo("home")
+                                    }
+                                },
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToSettings = { navController.navigate("settings") }
                             )
                         }
                         composable("settings") {

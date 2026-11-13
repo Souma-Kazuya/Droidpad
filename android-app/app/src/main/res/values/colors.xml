@@ -3,4 +3,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="xbox_green">#FF107C10</color>
     <color name="xbox_dark">#FF1A1A1A</color>
+    <color name="ic_launcher_background">#FF0F1318</color>
+    <color name="ic_launcher_mint">#FF4ADE80</color>
 </resources>
