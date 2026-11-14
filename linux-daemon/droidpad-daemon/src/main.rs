@@ -7,6 +7,7 @@
 
 mod daemon;
 mod protocol;
+pub mod slot;
 mod transport;
 mod ui;
 mod uinput;

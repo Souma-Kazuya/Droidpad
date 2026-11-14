@@ -26,6 +26,7 @@ import com.droidpad.ui.screens.GamepadScreen
 import com.droidpad.ui.screens.HomeScreen
 import com.droidpad.ui.screens.KeyboardScreen
 import com.droidpad.ui.screens.SettingsScreen
+import com.droidpad.ui.screens.SplashScreen
 import com.droidpad.ui.theme.DroidPadTheme
 
 class MainActivity : ComponentActivity() {
@@ -72,7 +73,16 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "home") {
+                    NavHost(navController = navController, startDestination = "splash") {
+                        composable("splash") {
+                            SplashScreen(
+                                onSplashFinished = {
+                                    navController.navigate("home") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
                         composable("home") {
                             HomeScreen(
                                 service = boundService,

@@ -1,6 +1,7 @@
 //! DroidPad Linux UI: Libadwaita Application & Status Window.
 
 pub mod settings;
+pub mod splash;
 pub mod tray;
 
 use anyhow::Result;
@@ -21,7 +22,7 @@ pub fn run_app(
         .build();
 
     app.connect_activate(move |app| {
-        tray::build_main_window(app, state_rx.clone());
+        splash::show_splash_window(app, state_rx.clone());
     });
 
     let empty_args: Vec<String> = vec![];

@@ -18,10 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.droidpad.ui.layout.AbxyStyle
 import com.droidpad.ui.theme.*
 
 /**
- * Xbox-style ABXY diamond cluster matching Image 1.
+ * ABXY diamond cluster with configurable layouts (Xbox, Nintendo Switch, or PlayStation symbols).
  * Features 4 circular action buttons with authentic colors and independent
  * multi-touch gesture detection to allow chords and rapid taps without interference.
  */
@@ -29,59 +30,88 @@ import com.droidpad.ui.theme.*
 fun ABXYDiamond(
     modifier: Modifier = Modifier,
     size: Dp = 140.dp,
+    style: AbxyStyle = AbxyStyle.XBOX,
     onButtonPress: (button: String, pressed: Boolean) -> Unit
 ) {
     val buttonSize = (size.value * 0.32f).dp
+
+    // Determine layout letters and physical Xbox mapping:
+    // (topLetter, topMap, topColor, topPressedColor, ...)
+    val (topLetter, topMap, topColor, topPressed) = when (style) {
+        AbxyStyle.XBOX -> Quad("Y", "Y", ButtonColorY, Color(0xFFE5B82A))
+        AbxyStyle.NINTENDO -> Quad("X", "X", ButtonColorX, Color(0xFF3B82F6))
+        AbxyStyle.PLAYSTATION -> Quad("▲", "Y", ButtonColorA, AccentMintGreenPressed)
+    }
+
+    val (leftLetter, leftMap, leftColor, leftPressed) = when (style) {
+        AbxyStyle.XBOX -> Quad("X", "X", ButtonColorX, Color(0xFF3B82F6))
+        AbxyStyle.NINTENDO -> Quad("Y", "Y", ButtonColorY, Color(0xFFE5B82A))
+        AbxyStyle.PLAYSTATION -> Quad("■", "X", Color(0xFFF472B6), Color(0xFFEC4899))
+    }
+
+    val (rightLetter, rightMap, rightColor, rightPressed) = when (style) {
+        AbxyStyle.XBOX -> Quad("B", "B", ButtonColorB, Color(0xFFEF4444))
+        AbxyStyle.NINTENDO -> Quad("A", "B", ButtonColorA, AccentMintGreenPressed)
+        AbxyStyle.PLAYSTATION -> Quad("●", "B", ButtonColorB, Color(0xFFEF4444))
+    }
+
+    val (bottomLetter, bottomMap, bottomColor, bottomPressed) = when (style) {
+        AbxyStyle.XBOX -> Quad("A", "A", ButtonColorA, AccentMintGreenPressed)
+        AbxyStyle.NINTENDO -> Quad("B", "A", ButtonColorB, Color(0xFFEF4444))
+        AbxyStyle.PLAYSTATION -> Quad("✖", "A", ButtonColorX, Color(0xFF3B82F6))
+    }
 
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
-        // Y Button (Top, Yellow)
+        // Top Button
         DiamondCircleButton(
-            letter = "Y",
-            color = ButtonColorY,
-            pressedColor = Color(0xFFE5B82A),
+            letter = topLetter,
+            color = topColor,
+            pressedColor = topPressed,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .size(buttonSize),
-            onPressChange = { onButtonPress("Y", it) }
+            onPressChange = { onButtonPress(topMap, it) }
         )
 
-        // X Button (Left, Blue)
+        // Left Button
         DiamondCircleButton(
-            letter = "X",
-            color = ButtonColorX,
-            pressedColor = Color(0xFF3B82F6),
+            letter = leftLetter,
+            color = leftColor,
+            pressedColor = leftPressed,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .size(buttonSize),
-            onPressChange = { onButtonPress("X", it) }
+            onPressChange = { onButtonPress(leftMap, it) }
         )
 
-        // B Button (Right, Red)
+        // Right Button
         DiamondCircleButton(
-            letter = "B",
-            color = ButtonColorB,
-            pressedColor = Color(0xFFEF4444),
+            letter = rightLetter,
+            color = rightColor,
+            pressedColor = rightPressed,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(buttonSize),
-            onPressChange = { onButtonPress("B", it) }
+            onPressChange = { onButtonPress(rightMap, it) }
         )
 
-        // A Button (Bottom, Green)
+        // Bottom Button
         DiamondCircleButton(
-            letter = "A",
-            color = ButtonColorA,
-            pressedColor = AccentMintGreenPressed,
+            letter = bottomLetter,
+            color = bottomColor,
+            pressedColor = bottomPressed,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .size(buttonSize),
-            onPressChange = { onButtonPress("A", it) }
+            onPressChange = { onButtonPress(bottomMap, it) }
         )
     }
 }
+
+private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 private fun DiamondCircleButton(

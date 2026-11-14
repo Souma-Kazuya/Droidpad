@@ -62,6 +62,11 @@ impl VirtualGamepad {
     ///
     /// Requires `/dev/uinput` to be accessible.
     pub fn new() -> Result<Self> {
+        Self::new_with_slot(1)
+    }
+
+    /// Create the uinput virtual gamepad device with a specific slot index (e.g. 1..4).
+    pub fn new_with_slot(slot: u8) -> Result<Self> {
         // --- Buttons ---
         let mut keys = AttributeSet::<Key>::new();
         for &(_, key) in BUTTON_MAP {
@@ -73,9 +78,15 @@ impl VirtualGamepad {
         let axis_trigger = AbsInfo::new(0, 0, 255, 0, 0, 1);
         let axis_hat = AbsInfo::new(0, -1, 1, 0, 0, 1);
 
+        let device_name = if slot <= 1 {
+            "Microsoft X-Box 360 pad".to_string()
+        } else {
+            format!("Microsoft X-Box 360 pad (Player {slot})")
+        };
+
         let device = VirtualDeviceBuilder::new()
             .context("creating VirtualDeviceBuilder for gamepad")?
-            .name("Microsoft X-Box 360 pad")
+            .name(&device_name)
             // Xbox 360 USB IDs so xpad-aware apps recognise the device.
             // NOTE: evdev VirtualDeviceBuilder doesn't expose vendor/product
             //       directly in stable API; we set it via the builder if supported,

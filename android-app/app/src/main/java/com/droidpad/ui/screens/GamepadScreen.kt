@@ -20,6 +20,8 @@ import com.droidpad.hid.GamepadEncoder
 import com.droidpad.service.DroidPadService
 import com.droidpad.transport.ConnectionState
 import com.droidpad.ui.components.*
+import com.droidpad.ui.layout.GamepadLayoutManager
+import com.droidpad.ui.layout.StickArrangement
 import com.droidpad.ui.theme.*
 
 /**
@@ -62,6 +64,9 @@ fun GamepadScreen(
         ?: remember { mutableStateOf(ConnectionState.Disconnected) }
     val assistantState by service?.assistantManager?.uiState?.collectAsState()
         ?: remember { mutableStateOf(AssistantUiState()) }
+
+    val layoutManager = remember { GamepadLayoutManager.getInstance(context) }
+    val layoutPrefs by layoutManager.layoutState.collectAsState()
 
     fun sendButton(mask: Short, pressed: Boolean) {
         val pkt = encoder.setButton(mask, pressed)
@@ -147,27 +152,42 @@ fun GamepadScreen(
             }
         }
 
-        // ── 2. Left Thumb Zone: Left Stick (Top) + D-Pad (Bottom) ────────────
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .padding(top = 58.dp, bottom = 4.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Left Joystick (High)
+        // ── 2. Left Thumb Zone ──────────────────────────────────────────────
+        val joystickSize = (132 * layoutPrefs.joystickScale).dp
+        val diamondSize = (138 * layoutPrefs.buttonScale).dp
+        val dpadSize = (125 * layoutPrefs.buttonScale).dp
+
+        val leftStickComposable = @Composable {
             VirtualJoystick(
-                size = 132.dp,
+                size = joystickSize,
                 onMove = { x, y ->
-                    val pkt = encoder.updateLeftStick(x, y)
+                    val pkt = if (!layoutPrefs.swapSticks) {
+                        encoder.updateLeftStick(x, y)
+                    } else {
+                        encoder.updateRightStick(x, y)
+                    }
                     service?.transportManager?.sendPacket(pkt)
                 }
             )
+        }
 
-            // D-Pad (Low)
+        val rightStickComposable = @Composable {
+            VirtualJoystick(
+                size = joystickSize,
+                onMove = { x, y ->
+                    val pkt = if (!layoutPrefs.swapSticks) {
+                        encoder.updateRightStick(x, y)
+                    } else {
+                        encoder.updateLeftStick(x, y)
+                    }
+                    service?.transportManager?.sendPacket(pkt)
+                }
+            )
+        }
+
+        val dpadComposable = @Composable {
             Dpad(
-                size = 125.dp,
+                size = dpadSize,
                 onDirectionChange = { up, down, left, right ->
                     encoder.setButton(GamepadEncoder.DPAD_UP, up)
                     encoder.setButton(GamepadEncoder.DPAD_DOWN, down)
@@ -176,6 +196,48 @@ fun GamepadScreen(
                     service?.transportManager?.sendPacket(pkt)
                 }
             )
+        }
+
+        val abxyComposable = @Composable {
+            ABXYDiamond(
+                size = diamondSize,
+                style = layoutPrefs.abxyStyle,
+                onButtonPress = { letter, pressed ->
+                    when (letter) {
+                        "A" -> sendButton(GamepadEncoder.BTN_A, pressed)
+                        "B" -> sendButton(GamepadEncoder.BTN_B, pressed)
+                        "X" -> sendButton(GamepadEncoder.BTN_X, pressed)
+                        "Y" -> sendButton(GamepadEncoder.BTN_Y, pressed)
+                    }
+                }
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .padding(top = 58.dp, bottom = 4.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            when (layoutPrefs.stickArrangement) {
+                StickArrangement.ASYMMETRIC_XBOX -> {
+                    // Left Stick High, Dpad Low
+                    leftStickComposable()
+                    dpadComposable()
+                }
+                StickArrangement.SYMMETRIC_BOTTOM -> {
+                    // PlayStation Style: Dpad High, Left Stick Low
+                    dpadComposable()
+                    leftStickComposable()
+                }
+                StickArrangement.INVERTED_STICKS -> {
+                    // Dpad High, Left Stick Low
+                    dpadComposable()
+                    leftStickComposable()
+                }
+            }
         }
 
         // ── 3. Center Control Zone ───────────────────────────────────────────
@@ -271,7 +333,7 @@ fun GamepadScreen(
             }
         }
 
-        // ── 4. Right Thumb Zone: ABXY Diamond (Top) + Right Stick (Bottom) ───
+        // ── 4. Right Thumb Zone ──────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
@@ -280,27 +342,23 @@ fun GamepadScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ABXY Diamond (High)
-            ABXYDiamond(
-                size = 138.dp,
-                onButtonPress = { letter, pressed ->
-                    when (letter) {
-                        "A" -> sendButton(GamepadEncoder.BTN_A, pressed)
-                        "B" -> sendButton(GamepadEncoder.BTN_B, pressed)
-                        "X" -> sendButton(GamepadEncoder.BTN_X, pressed)
-                        "Y" -> sendButton(GamepadEncoder.BTN_Y, pressed)
-                    }
+            when (layoutPrefs.stickArrangement) {
+                StickArrangement.ASYMMETRIC_XBOX -> {
+                    // ABXY High, Right Stick Low
+                    abxyComposable()
+                    rightStickComposable()
                 }
-            )
-
-            // Right Joystick (Low)
-            VirtualJoystick(
-                size = 132.dp,
-                onMove = { x, y ->
-                    val pkt = encoder.updateRightStick(x, y)
-                    service?.transportManager?.sendPacket(pkt)
+                StickArrangement.SYMMETRIC_BOTTOM -> {
+                    // PlayStation Style: ABXY High, Right Stick Low
+                    abxyComposable()
+                    rightStickComposable()
                 }
-            )
+                StickArrangement.INVERTED_STICKS -> {
+                    // Right Stick High, ABXY Low
+                    rightStickComposable()
+                    abxyComposable()
+                }
+            }
         }
 
         // ── 5. Offline Mini AI Assistant Drawer (Overlay) ────────────────────

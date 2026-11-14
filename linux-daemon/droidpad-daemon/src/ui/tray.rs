@@ -73,6 +73,27 @@ pub fn build_main_window(app: &Application, state_rx: watch::Receiver<Connection
                     status_title_clone.set_label("Connected");
                     status_subtitle_clone.set_label(&format!("{peer} via {transport}"));
                 }
+                ConnectionState::MultipleConnected(devices) => {
+                    if devices.is_empty() {
+                        status_title_clone.set_label("Ready to Connect");
+                        status_subtitle_clone.set_label("Listening on Wi-Fi, Bluetooth & USB");
+                    } else if devices.len() == 1 {
+                        let dev = &devices[0];
+                        status_title_clone.set_label(&format!("Player {} Connected", dev.slot));
+                        status_subtitle_clone.set_label(&format!(
+                            "{} ({}) via {}",
+                            dev.name, dev.peer, dev.transport
+                        ));
+                    } else {
+                        status_title_clone
+                            .set_label(&format!("{} Players Connected", devices.len()));
+                        let details: Vec<String> = devices
+                            .iter()
+                            .map(|d| format!("P{}: {} [{}]", d.slot, d.name, d.transport))
+                            .collect();
+                        status_subtitle_clone.set_label(&details.join("\n"));
+                    }
+                }
             }
         }
         glib::ControlFlow::Continue

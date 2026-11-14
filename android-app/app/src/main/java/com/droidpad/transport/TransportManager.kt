@@ -47,27 +47,35 @@ class TransportManager(
 
     fun connect(transport: DroidTransport, deviceName: String) {
         // Cancel any pending connection attempt before starting a new one
-        connectJob?.cancel()
+        val prevJob = connectJob
+        prevJob?.cancel()
 
         connectJob = scope.launch(Dispatchers.IO) {
+            prevJob?.join()
+            ensureActive()
             connectionMutex.withLock {
+                ensureActive()
                 try {
                     // Teardown previous active connection cleanly without resetting to Disconnected
                     teardownResources()
+                    ensureActive()
 
                     _connectionState.value = fsm.transition(ConnectionEvent.ConnectInitiated(transport.name))
                     activeTransport = transport
 
                     val (input, output) = transport.open()
+                    ensureActive()
                     inputStream = input
                     outputStream = output
 
                     // Send initial handshake
                     val hs = Packet.Handshake(HandshakePayload("1", deviceName))
                     hs.writeTo(output)
+                    ensureActive()
 
                     // Read server handshake
                     val serverHs = Packet.readFrom(input)
+                    ensureActive()
                     val peerName = if (serverHs is Packet.Handshake) serverHs.payload.name else "Linux Host"
 
                     _connectionState.value = fsm.transition(ConnectionEvent.HandshakeCompleted(peerName, transport.name))
@@ -160,8 +168,10 @@ class TransportManager(
     }
 
     suspend fun disconnectSuspend() {
+        val prevJob = connectJob
         connectJob?.cancel()
         connectJob = null
+        prevJob?.join()
 
         connectionMutex.withLock {
             teardownResources()
@@ -170,10 +180,12 @@ class TransportManager(
     }
 
     fun disconnect() {
+        val prevJob = connectJob
         connectJob?.cancel()
         connectJob = null
 
         scope.launch(Dispatchers.IO) {
+            prevJob?.join()
             connectionMutex.withLock {
                 teardownResources()
                 _connectionState.value = fsm.transition(ConnectionEvent.DisconnectedExplicitly)

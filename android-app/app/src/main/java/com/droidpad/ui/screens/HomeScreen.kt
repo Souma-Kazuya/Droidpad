@@ -43,7 +43,7 @@ fun HomeScreen(
     val connectionState by service?.transportManager?.connectionState?.collectAsState()
         ?: remember { mutableStateOf(ConnectionState.Disconnected) }
 
-    var wifiIp by remember { mutableStateOf("192.168.1.100") }
+    var wifiIp by remember { mutableStateOf("10.0.2.2") }
     var showWifiDialog by remember { mutableStateOf(false) }
     var showBtDialog by remember { mutableStateOf(false) }
 
