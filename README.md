@@ -10,6 +10,17 @@
 [![Android](https://img.shields.io/badge/Android-8.0%2B-brightgreen.svg)](android-app)
 [![Linux](https://img.shields.io/badge/Linux-Kernel%20uinput-orange.svg)](linux-daemon)
 [![Offline AI](https://img.shields.io/badge/Mini%20AI-100%25%20On--Device%20NanoLM-4ADE80.svg)](#-on-device-mini-ai-assistant-nanolm)
+[![Showcase Video](https://img.shields.io/badge/🎬%20Showcase%20Video-1080p%2060fps-6366F1.svg)](docs/assets/droidpad-showcase.mp4)
+
+<br />
+
+<p align="center">
+  <a href="docs/assets/droidpad-showcase.mp4">
+    <img src="docs/assets/droidpad-showcase-poster.png" alt="DroidPad Motion Graphics Showcase" width="100%" />
+  </a>
+  <br />
+  <em>🎬 <strong>Watch the 1080p 60fps Motion Graphics Showcase (24s)</strong> • Click the preview above to play</em>
+</p>
 
 ```
   Android App  ──── Wi-Fi / Bluetooth / USB ────►  Linux Daemon
