@@ -191,4 +191,4 @@ Production assets and design specifications created with the Antigravity `logo-d
 
 ## 📄 License
 
-Licensed under the [Apache License, Version 2.0](LICENSE).
+Licensed under the [MIT License](LICENSE).
