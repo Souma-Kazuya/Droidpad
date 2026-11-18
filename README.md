@@ -4,12 +4,11 @@
 
 # DroidPad
 
-**Transform your Android device into a high-performance Linux keyboard and Xbox gamepad — over Wi-Fi, Bluetooth, or USB — now with an On-Device Mini AI Gaming Companion.**
+**Transform your Android device into a high-performance Linux keyboard and Xbox gamepad — over Wi-Fi, Bluetooth, or USB.**
 
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-brightgreen.svg)](android-app)
 [![Linux](https://img.shields.io/badge/Linux-Kernel%20uinput-orange.svg)](linux-daemon)
-[![Offline AI](https://img.shields.io/badge/Mini%20AI-100%25%20On--Device%20NanoLM-4ADE80.svg)](#-on-device-mini-ai-assistant-nanolm)
 [![Showcase Video](https://img.shields.io/badge/🎬%20Showcase%20Video-1080p%2060fps-6366F1.svg)](docs/assets/droidpad-showcase.mp4)
 
 <br />
@@ -28,7 +27,6 @@
       📱                                              🐧
   Keyboard UI    ──── HID packets (0x01) ──►   /dev/uinput  ──►  evdev
   Gamepad UI     ──── HID packets (0x02) ──►   /dev/uinput  ──►  xpad-compat
-  Mini AI HUD    ◄── GameContext (0x06)  ───   Active Game Detector
 ```
 
 </div>
@@ -41,25 +39,12 @@
 |---|---|
 | **🎮 Gamepad** | Xbox 360-compatible layout (`/dev/input/js*`) with tactile ABXY diamond, dual thumbsticks, D-Pad, and responsive triggers |
 | **⌨️ Keyboard** | Full QWERTY keyboard + modifiers (Ctrl, Alt, Shift, Meta) + function keys + arrow clusters |
-| **🧠 Mini AI Assistant** | **100% On-Device NanoLM**: Live HUD tips, combos, timings, and cheat sheets for games with **zero cloud connection** |
 | **📶 Wi-Fi Transport** | Auto-discovery via mDNS (`_droidpad._tcp.local.`) on port `27183` · encrypted over TLS |
 | **🔵 Bluetooth Transport**| Bluetooth Classic RFCOMM (`6e400001-b5a3-f393-e0a9-e50e24dcca9e`) with native BlueZ D-Bus integration |
 | **⚡ USB Transport** | Direct low-latency ADB reverse tunnel (`127.0.0.1:27184`) with sub-4ms response time |
 | **📳 Haptic Rumble** | Host rumble events (`0x04`) translated into phone linear resonant actuator (LRA) haptic vibrations |
 | **🐧 Linux Host UI** | Modern Libadwaita / GTK4 desktop application with system tray indicator and configuration window |
-| **📱 Android UI** | Jetpack Compose dark-slate cyber theme, multi-touch isolation zones, and expandable AI companion drawer |
-
----
-
-## 🧠 On-Device Mini AI Assistant (NanoLM)
-
-DroidPad features a dedicated **offline Mini AI Assistant** running directly on mobile hardware resources without sending any data over the internet:
-
-- **HUD Glanceable Banner**: Non-intrusive floating pill nestled in the controller center that smoothly rotates context-aware tips every 12 seconds.
-- **Interactive Assistant Drawer**: Tapping the HUD pill opens an in-game companion with:
-  - **Auto & Manual Game Selector**: Automatically receives active game context from the Linux daemon or lets you select popular genres (*Soulslike, Fighting, Racing, Platformer, FPS, RPG*).
-  - **Combo & Timing Cheat Sheets**: Factual input strings (e.g. Hadouken `↓ ↘ → + [X]`, Hollow Knight pogo `↓ + [X]`, Elden Ring jump heavy stance-break `[A] ➔ [RT]`).
-  - **Offline Q&A**: Real-time token-streamed answers to queries like *"How do I parry reliably?"*, *"Reduce input delay"*, or *"Best button mapping"*.
+| **📱 Android UI** | Jetpack Compose dark-slate cyber theme, multi-touch isolation zones, and custom button layouts |
 
 ---
 
@@ -97,35 +82,34 @@ Open **DroidPad** on your Android device and tap your preferred transport:
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                              Android App                               │
-│  ┌──────────────┐     ┌──────────────┐     ┌────────────────────────┐  │
-│  │   Keyboard   │     │   Gamepad    │     │  Mini AI Companion     │  │
-│  │    Screen    │     │    Screen    │     │  (HUD Pill + Drawer)   │  │
-│  └──────┬───────┘     └──────┬───────┘     └───────────┬────────────┘  │
-│         │                    │                         │               │
-│         ▼                    ▼                         ▼               │
-│  ┌──────────────────────────────────┐      ┌────────────────────────┐  │
-│  │ HID Encoder (Keyboard & Gamepad) │      │ NanoLM On-Device Model │  │
-│  └──────────────────┬───────────────┘      │ & Knowledge Base Graph │  │
-│                     │                      └───────────▲────────────┘  │
-│  ┌──────────────────▼──────────────────────────────────┴────────────┐  │
-│  │           Transport Manager (Wi-Fi / Bluetooth / USB)            │  │
-│  │                   DroidPad Foreground Service                    │  │
-│  └──────────────────────────────────┬───────────────────────────────┘  │
-└─────────────────────────────────────┼──────────────────────────────────┘
-                                      │  TLS / RFCOMM / ADB Tunnel
-┌─────────────────────────────────────▼──────────────────────────────────┐
+│  ┌──────────────┐                       ┌──────────────┐               │
+│  │   Keyboard   │                       │   Gamepad    │               │
+│  │    Screen    │                       │    Screen    │               │
+│  └──────┬───────┘                       └──────┬───────┘               │
+│         │                                      │                       │
+│         ▼                                      ▼                       │
+│  ┌─────────────────────────────────────────────────────┐               │
+│  │           HID Encoder (Keyboard & Gamepad)          │               │
+│  └──────────────────────────┬──────────────────────────┘               │
+│                             │                                          │
+│  ┌──────────────────────────▼────────────────────────────────────────┐ │
+│  │           Transport Manager (Wi-Fi / Bluetooth / USB)             │ │
+│  │                   DroidPad Foreground Service                     │ │
+│  └──────────────────────────┬────────────────────────────────────────┘ │
+└─────────────────────────────┼──────────────────────────────────────────┘
+                              │  TLS / RFCOMM / ADB Tunnel
+┌─────────────────────────────▼──────────────────────────────────────────┐
 │                         Linux Daemon (Rust)                            │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │          Async Transport Server (Wi-Fi, Bluetooth, USB)          │  │
-│  └──────────────────┬───────────────────────────────────────────────┘  │
-│                     │ Packet Parser                                    │
-│  ┌──────────────────▼─────────────────┐   ┌─────────────────────────┐  │
-│  │ Virtual Devices (uinput / evdev)   │   │ Active Game & Process   │  │
-│  │ • /dev/input/js0 (Xbox 360 Gamepad)│   │ Context Detector        │  │
-│  │ • Virtual Keyboard (/dev/uinput)   │   └────────────┬────────────┘  │
-│  └────────────────────────────────────┘                │ GameContext   │
-│                                                        │ Packet (0x06) │
-│  ┌─────────────────────────────────────────────────────▼────────────┐  │
+│  └──────────────────────────┬───────────────────────────────────────┘  │
+│                             │ Packet Parser                            │
+│  ┌──────────────────────────▼─────────┐                                │
+│  │ Virtual Devices (uinput / evdev)   │                                │
+│  │ • /dev/input/js0 (Xbox 360 Gamepad)│                                │
+│  │ • Virtual Keyboard (/dev/uinput)   │                                │
+│  └────────────────────────────────────┘                                │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │ GTK4 / Libadwaita Desktop Window & System Tray Status            │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
@@ -144,7 +128,6 @@ Packets use a compact binary framing: `[0x44] [0x50] [TYPE] [LENGTH] [PAYLOAD]`
 | `0x03` | **Ping** | Bidirectional | 0 bytes: keep-alive heartbeat |
 | `0x04` | **Rumble** | Host ➔ Device | 2 bytes: left (low-freq) + right (high-freq) motor magnitudes (0–255) |
 | `0x05` | **Handshake** | Bidirectional | JSON payload: Protocol version and device/host name |
-| `0x06` | **GameContext** | Host ➔ Device | JSON payload: Active game title, genre, and process metadata for AI tips |
 
 ---
 

@@ -1,6 +1,5 @@
 package com.droidpad.transport
 
-import com.droidpad.protocol.GameContextPayload
 import com.droidpad.protocol.HandshakePayload
 import com.droidpad.protocol.Packet
 import kotlinx.coroutines.*
@@ -31,9 +30,6 @@ class TransportManager(
     private val fsm = ConnectionStateMachine()
     private val _connectionState = MutableStateFlow<ConnectionState>(fsm.state)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
-
-    private val _gameContext = MutableStateFlow<GameContextPayload?>(null)
-    val gameContext: StateFlow<GameContextPayload?> = _gameContext.asStateFlow()
 
     private val connectionMutex = Mutex()
     private var connectJob: Job? = null
@@ -118,9 +114,6 @@ class TransportManager(
                         is Packet.Rumble -> {
                             onRumbleReceived?.invoke(pkt.payload.leftMotor, pkt.payload.rightMotor)
                         }
-                        is Packet.GameContext -> {
-                            _gameContext.value = pkt.payload
-                        }
                         is Packet.Ping -> {
                             // Keep-alive received
                         }
@@ -164,7 +157,6 @@ class TransportManager(
         activeTransport = null
         inputStream = null
         outputStream = null
-        _gameContext.value = null
     }
 
     suspend fun disconnectSuspend() {

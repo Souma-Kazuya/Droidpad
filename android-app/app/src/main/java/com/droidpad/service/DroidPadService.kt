@@ -16,7 +16,6 @@ import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import com.droidpad.MainActivity
 import com.droidpad.R
-import com.droidpad.ai.GameAssistantManager
 import com.droidpad.hid.GamepadEncoder
 import com.droidpad.hid.KeyboardEncoder
 import com.droidpad.transport.ConnectionState
@@ -37,7 +36,6 @@ class DroidPadService : Service() {
         private set
     val keyboardEncoder = KeyboardEncoder()
     val gamepadEncoder = GamepadEncoder()
-    val assistantManager = GameAssistantManager(serviceScope)
 
     private var vibrator: Vibrator? = null
 
@@ -58,10 +56,6 @@ class DroidPadService : Service() {
 
         transportManager.connectionState.onEach { state ->
             updateNotification(state)
-        }.launchIn(serviceScope)
-
-        transportManager.gameContext.onEach { context ->
-            assistantManager.onHostGameContextReceived(context)
         }.launchIn(serviceScope)
     }
 

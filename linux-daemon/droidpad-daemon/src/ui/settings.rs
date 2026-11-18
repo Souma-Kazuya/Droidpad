@@ -22,9 +22,13 @@ pub fn show_settings_window(app: &Application) {
     transport_group.set_title("Transports &amp; Connections");
     transport_group.set_description(Some("Configure local listeners on this machine"));
 
+    let host_ips = crate::ui::tray::get_host_ips();
+    let ip_str = host_ips.join(", ");
+    let wifi_subtitle = format!("Port 27183 • Host IP: {ip_str}");
+
     let wifi_row = ActionRow::builder()
         .title("Wi-Fi (TLS + mDNS)")
-        .subtitle("Port 27183 • Service _droidpad._tcp.local")
+        .subtitle(&wifi_subtitle)
         .build();
     let wifi_switch = Switch::builder().active(true).valign(Align::Center).build();
     wifi_row.add_suffix(&wifi_switch);

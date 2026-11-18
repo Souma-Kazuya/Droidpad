@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.droidpad.ai.AssistantUiState
 import com.droidpad.hid.GamepadEncoder
 import com.droidpad.service.DroidPadService
 import com.droidpad.transport.ConnectionState
@@ -62,8 +61,6 @@ fun GamepadScreen(
     val encoder = remember { service?.gamepadEncoder ?: GamepadEncoder() }
     val connectionState by service?.transportManager?.connectionState?.collectAsState()
         ?: remember { mutableStateOf(ConnectionState.Disconnected) }
-    val assistantState by service?.assistantManager?.uiState?.collectAsState()
-        ?: remember { mutableStateOf(AssistantUiState()) }
 
     val layoutManager = remember { GamepadLayoutManager.getInstance(context) }
     val layoutPrefs by layoutManager.layoutState.collectAsState()
@@ -249,24 +246,14 @@ fun GamepadScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Sub-cluster: Connection Card + Mini AI HUD + (View / Guide / Menu)
+            // Sub-cluster: Connection Card + (View / Guide / Menu)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Connection Status Card
                 GamepadConnectionCard(
                     connectionState = connectionState
-                )
-
-                // Mini AI Assistant HUD Pill
-                MiniAiHudPill(
-                    currentTip = assistantState.currentTip,
-                    activeGameTitle = assistantState.activeGameTitle,
-                    onNextTip = { service?.assistantManager?.nextTip() },
-                    onPrevTip = { service?.assistantManager?.prevTip() },
-                    onClick = { service?.assistantManager?.setDrawerOpen(true) },
-                    modifier = Modifier.widthIn(max = 280.dp)
                 )
 
                 // View - Guide (X) - Menu Row
@@ -359,20 +346,6 @@ fun GamepadScreen(
                     abxyComposable()
                 }
             }
-        }
-
-        // ── 5. Offline Mini AI Assistant Drawer (Overlay) ────────────────────
-        if (assistantState.isDrawerOpen) {
-            AiAssistantDrawer(
-                state = assistantState,
-                onClose = { service?.assistantManager?.setDrawerOpen(false) },
-                onSelectGameGenre = { title, genre ->
-                    service?.assistantManager?.setGameContext(title, genre)
-                },
-                onAskQuery = { query ->
-                    service?.assistantManager?.askAssistant(query)
-                }
-            )
         }
     }
 }

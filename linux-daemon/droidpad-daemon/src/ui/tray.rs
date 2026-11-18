@@ -10,13 +10,31 @@ use tokio::sync::watch;
 use crate::daemon::ConnectionState;
 use crate::ui::settings::show_settings_window;
 
+/// Retrieve primary non-loopback IPv4 addresses of this machine.
+pub fn get_host_ips() -> Vec<String> {
+    if let Ok(interfaces) = if_addrs::get_if_addrs() {
+        let mut ips = Vec::new();
+        for iface in interfaces {
+            if !iface.is_loopback() {
+                if let if_addrs::IfAddr::V4(ref addr) = iface.addr {
+                    ips.push(addr.ip.to_string());
+                }
+            }
+        }
+        if !ips.is_empty() {
+            return ips;
+        }
+    }
+    vec!["127.0.0.1".to_string()]
+}
+
 /// Construct the main status window displaying current connection and quick settings.
 pub fn build_main_window(app: &Application, state_rx: watch::Receiver<ConnectionState>) {
     let window = Window::builder()
         .application(app)
         .title("DroidPad")
-        .default_width(380)
-        .default_height(280)
+        .default_width(400)
+        .default_height(320)
         .build();
 
     let root = GtkBox::new(Orientation::Vertical, 0);
@@ -30,9 +48,9 @@ pub fn build_main_window(app: &Application, state_rx: watch::Receiver<Connection
     header.pack_end(&settings_btn);
     root.append(&header);
 
-    let content = GtkBox::new(Orientation::Vertical, 16);
-    content.set_margin_top(24);
-    content.set_margin_bottom(24);
+    let content = GtkBox::new(Orientation::Vertical, 14);
+    content.set_margin_top(20);
+    content.set_margin_bottom(20);
     content.set_margin_start(24);
     content.set_margin_end(24);
     content.set_valign(Align::Center);
@@ -55,6 +73,28 @@ pub fn build_main_window(app: &Application, state_rx: watch::Receiver<Connection
         .css_classes(["dim-label"])
         .build();
     content.append(&status_subtitle);
+
+    // Host IP pill / card for easy Wi-Fi manual connection on Android
+    let host_ips = get_host_ips();
+    let ip_str = host_ips.join(" • ");
+    let ip_box = GtkBox::new(Orientation::Vertical, 4);
+    ip_box.set_margin_top(8);
+    ip_box.set_halign(Align::Center);
+
+    let ip_badge_label = Label::builder()
+        .label(format!("Wi-Fi IP: {ip_str} (Port 27183)"))
+        .selectable(true)
+        .css_classes(["accent", "heading"])
+        .build();
+    ip_box.append(&ip_badge_label);
+
+    let ip_hint_label = Label::builder()
+        .label("Enter this IP in DroidPad on Android if Wi-Fi discovery does not find it")
+        .css_classes(["caption", "dim-label"])
+        .build();
+    ip_box.append(&ip_hint_label);
+
+    content.append(&ip_box);
 
     // Watch channel updater for connection state
     let status_title_clone = status_title.clone();

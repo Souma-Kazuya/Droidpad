@@ -77,6 +77,19 @@ pub async fn run(
     };
 
     info!("All ready. Listening for incoming Android connections...");
+    if let Ok(interfaces) = if_addrs::get_if_addrs() {
+        let ips: Vec<String> = interfaces
+            .into_iter()
+            .filter(|iface| !iface.is_loopback())
+            .filter_map(|iface| match iface.addr {
+                if_addrs::IfAddr::V4(addr) => Some(format!("{}: {}", iface.name, addr.ip)),
+                _ => None,
+            })
+            .collect();
+        if !ips.is_empty() {
+            info!("Host IP addresses for Wi-Fi connection: {}", ips.join(", "));
+        }
+    }
 
     let host_name = std::fs::read_to_string("/etc/hostname")
         .unwrap_or_else(|_| "Linux Host".to_string())
